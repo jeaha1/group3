@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Log + Search Only</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #000;
+      --sidebar-bg: #fff;
+      --sidebar-text: #333;
+      --content-bg: #fff;
+      --highlight: #4f46e5;
+      --button-bg: #4f46e5;
+      --button-text: #fff;
+      --border-color: #eee;
+    }
+
+    body.dark {
+      --bg-color: #2d3436;
+      --text-color: #dfe6e9;
+      --sidebar-bg: #1e1e1e;
+      --sidebar-text: #bbb;
+      --content-bg: #2f2f2f;
+      --highlight: #81ecec;
+      --button-bg: #636e72;
+      --button-text: #fff;
+      --border-color: #555;
+    }
+
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    body {
+      display: flex; flex-direction: row;
+      min-width: 1200px;
+    }
+
+    .sidebar {
+      width: 220px; background: var(--sidebar-bg);
+      border-right: 1px solid var(--border-color);
+      padding: 24px 0 0 0;
+      box-sizing: border-box;
+      flex-shrink: 0; display: flex;
+      flex-direction: column;
+      min-height: 100vh; height: 100vh;
+      color: var(--sidebar-text);
+    }
+
+    .sidebar .logo {
+      font-weight: bold;
+      margin-left: 24px;
+      margin-bottom: 32px;
+      font-size: 18px;
+    }
+
+    .sidebar .user {
+      display: flex; align-items: center;
+      margin-bottom: 32px;
+      margin-left: 24px;
+    }
+
+    .sidebar .user img {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px 24px;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 20px;
+      color: var(--sidebar-text);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .sidebar .new-post {
+      margin-left: 24px; margin-bottom: 16px;
+      padding: 8px 20px;
+      background:#4f46e5; 
+      color: var(--button-text);
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .sidebar .toggle-theme {
+      margin-left: 24px; margin-bottom: 32px;
+      padding: 8px 20px;
+      background: #4f46e5; 
+      color: var(--button-text);
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .sidebar .logout {
+      margin-left: 24px;
+      color: #888;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .search-page-container {
+      flex: 1;
+      background: var(--content-bg);
+      padding: 40px 24px 0 24px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .search-header {
+      margin-bottom: 24px;
+    }
+
+    .search-bar-wrapper {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 12px;
+      background: #fefefe;
+    }
+
+    .search-icon {
+      margin-right: 8px;
+      font-size: 18px;
+    }
+
+    #main-search-input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 15px;
+      background: transparent;
+      color: inherit;
+    }
+
+    .search-options-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      background: #eee;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #555;
+      transition: background-color 0.3s;
+    }
+
+    .tab-button.active {
+      background: #4f46e5;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .search-content-area {
+      font-size: 14px;
+      color: var(--text-color);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .content-section {
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .see-all-link {
+      font-size: 13px;
+      color: var(--highlight);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .recommended-users-list,
+    .popular-posts-grid,
+    .popular-hashtags-list {
+      display: none;
+    }
+
+    .no-results {
+      text-align: center;
+      color: #888;
+      margin-top: 40px;
+    }
+
+    .no-results .icon {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">Daily Log</div>
+    <div class="user">
+      <img src="#" alt="User" />
+      <div>
+        <div>사용자명</div>
+        <div style="font-size:13px; color:#888;">email@example.com</div>
+      </div>
+    </div>
+    <ul>
+     <ul>
+  <li onclick="location.href='/'">홈</li>
+  <li onclick="location.href='/alarm'">알람</li>
+  <li onclick="location.href='/friends'">친구 목록</li>
+  <li onclick="location.href='/chat'">채팅</li>
+  <li onclick="location.href='/live'">실시간 동영상</li>
+  <li><a th:href="@{/mypage}">내 프로필</a></li>
+  <li onclick="location.href='/setting'">설정</li>
+  <li onclick="location.href='/inquiry/form'">📬 1:1 문의하기</li>
+  <li onclick="location.href='/inquiry/list'">📄 내 문의 내역</li>
+</ul>
+
+          
+      
+    </ul>
+    <button class="new-post">+ 새 글 쓰기</button>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙 다크모드 토글</button>
+    <div class="logout">로그아웃</div>
+  </div>
+
+  <div class="search-page-container">
+    <header class="search-header">
+      <div class="search-bar-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="main-search-input" placeholder="검색어를 입력하세요..." />
+      </div>
+    </header>
+
+    <div class="search-options-tabs">
+      <button class="tab-button active" data-tab-target="all">전체</button>
+      <button class="tab-button" data-tab-target="posts">게시물</button>
+      <button class="tab-button" data-tab-target="users">@사용자</button>
+      <button class="tab-button" data-tab-target="hashtags">#해시태그</button>
+    </div>
+
+    <main class="search-content-area">
+      <div id="all-content" class="tab-content active"></div>
+      <div id="posts-content" class="tab-content">
+        <div class="no-results"><span class="icon">📄</span><p>게시물 검색 결과가 없습니다.</p></div>
+      </div>
+      <div id="users-content" class="tab-content">
+        <div class="no-results"><span class="icon">👤</span><p>사용자를 찾을 수 없습니다.</p></div>
+      </div>
+      <div id="hashtags-content" class="tab-content">
+        <div class="no-results"><span class="icon">#️⃣</span><p>관련 게시물이 없습니다.</p></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.search-options-tabs .tab-button');
+    const tabContents = document.querySelectorAll('.search-content-area .tab-content');
+    const searchInput = document.getElementById('main-search-input');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const targetId = tab.dataset.tabTarget + '-content';
+        tabContents.forEach(content => {
+          content.classList.toggle('active', content.id === targetId);
+        });
+      });
+    });
+
+    searchInput.addEventListener('keypress', function(event) {
+      if (event.key === 'Enter' && this.value.trim() !== '') {
+        const currentActiveTab = document.querySelector('.search-options-tabs .tab-button.active');
+        const searchType = currentActiveTab ? currentActiveTab.dataset.tabTarget : 'all';
+        performSearch(this.value.trim(), searchType);
+      }
+    });
+
+    function performSearch(query, type) {
+      tabContents.forEach(content => content.classList.remove('active'));
+      let targetContentId = type + '-content';
+      if (type === 'all' && query) {
+        targetContentId = 'posts-content';
+      }
+      const resultContentArea = document.getElementById(targetContentId);
+      if (resultContentArea) {
+        resultContentArea.classList.add('active');
+      }
+    }
+
+    // ✅ 다크모드 로직
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+      }
+    });
+  </script>
+</body>
+</html>

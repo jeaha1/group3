@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>이메일 변경</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #f5f6fa;
+      color: #2d3436;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: 1.5em;
+    }
+
+    .info {
+      margin-bottom: 28px;
+      font-size: 1em;
+      color: #636e72;
+    }
+
+    .current-email {
+      font-weight: bold;
+      color: #0984e3;
+    }
+
+    button {
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #3d37c5;
+    }
+
+    .back-link {
+      display: block;
+      margin-top: 24px;
+      font-size: 0.95em;
+      color: #636e72;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>이메일 변경</h2>
+    <p class="info">
+      현재 등록된 이메일은 <span class="current-email" id="emailText">user@example.com</span> 입니다.<br>
+      이메일 변경을 위해 인증이 필요합니다.
+    </p>
+    <form th:action="@{/email-verify}" method="get">
+      <input type="hidden" name="from" value="change-email">
+<a href="/email-verify?redirect=/setting/change-email-form" class="button">이메일 인증하기</a>
+    </form>
+    <a th:href="@{/setting}" class="back-link">← 설정으로 돌아가기</a>
+  </div>
+
+  <!-- JS로 현재 이메일 출력 가능 (서버에서 Model로 내려주는 경우도 가능) -->
+  <script>
+    // 백엔드에서 유저 이메일을 내려주는 경우 JS에서 처리
+    // const userEmail = 'user@example.com';
+    // document.getElementById('emailText').innerText = userEmail;
+  </script>
+</body>
+</html>

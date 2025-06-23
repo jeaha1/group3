@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설정 페이지</title>
+  <style>
+    :root {
+      --bg-color: #f5f6fa;
+      --text-color: #000000;
+      --main-bg: #ffffff;
+    }
+    body.dark {
+      --bg-color: #2d3436;
+      --text-color: #dfe6e9;
+      --main-bg: #353b48;
+    }
+    body {
+      font-family: 'Noto Sans KR', Arial, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2d3436;
+      color: #fff;
+      padding: 24px 32px;
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+    nav {
+      background: #636e72;
+      padding: 12px 32px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 24px;
+      padding: 0;
+      margin: 0;
+    }
+    nav a {
+      color: #dfe6e9;
+      text-decoration: none;
+      font-size: 1.1em;
+    }
+    main {
+      max-width: 480px;
+      margin: 40px auto;
+      background: var(--main-bg);
+      border-radius: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      padding: 32px 28px;
+    }
+    .setting-title {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    ul.settings-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    ul.settings-list li {
+      display: flex;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #ececec;
+      font-size: 1.08em;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .icon {
+      width: 30px;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    footer {
+      text-align: center;
+      color: #888;
+      font-size: 0.98em;
+      padding: 18px 0;
+      background: var(--bg-color);
+      margin-top: 40px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      width: 400px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      position: relative;
+      animation: fadeIn 0.25s ease;
+      color: #000;
+    }
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 18px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .theme-toggle-button {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 6px 12px;
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>설정 홈페이지</header>
+  <nav>
+    <ul>
+      <li><a href="#">홈</a></li>
+      <li><a href="#">설정</a></li>
+      <li><a href="#">고객센터</a></li>
+      <li><a href="#">로그아웃</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="setting-title">⚙️ 설정</div>
+    <ul class="settings-list">
+      <li data-type="account"><span class="icon">🛡️</span>개인정보 변경</li>
+      <li data-type="profile"><span class="icon">🔒</span>프로필 공개 범위 설정</li>
+      <li data-type="block"><span class="icon">🚫</span>차단 사용자 관리</li>
+      <li data-type="theme"><span class="icon">🌙</span>다크모드 / 라이트모드 전환</li>
+      <li data-type="language"><span class="icon">🌐</span>언어 설정 (선택)</li>
+      <li data-type="inquiry"><span class="icon">📮</span>1:1 문의</li>
+      <li data-type="withdraw"><span class="icon">❌</span>계정 탈퇴</li>
+    </ul>
+  </main>
+
+  <div id="settingModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3 id="modalTitle">설정 항목</h3>
+      <div id="modalBody">내용이 표시됩니다.</div>
+    </div>
+  </div>
+
+  <footer>© 2025 설정 홈페이지. All rights reserved.</footer>
+
+  <script>
+    const modal = document.getElementById('settingModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const closeBtn = document.querySelector('.close');
+
+    document.querySelectorAll('.settings-list li[data-type]').forEach(item => {
+      item.addEventListener('click', () => {
+        const type = item.dataset.type;
+        modalTitle.innerText = item.innerText.trim();
+
+        if (type === 'theme') {
+          modalBody.innerHTML = `
+            <p><b>다크모드/라이트모드</b>를 선택할 수 있습니다.</p>
+            <button class="theme-toggle-button" onclick="toggleTheme()">현재 테마 전환</button>
+          `;
+        } else if (type === 'account') {
+          modalBody.innerHTML = `
+            <p><b>개인정보 변경</b> 항목을 선택하세요:</p>
+            <ul style="list-style: none; padding: 0; margin-top: 10px;">
+              <li style="margin-bottom: 10px;"><button onclick="location.href='/setting/change-password'">🔑 비밀번호 변경</button></li>
+              <li style="margin-bottom: 10px;"><button onclick="location.href='/setting/change-email'">📧 이메일 주소 변경</button></li>
+              <li><button onclick="location.href='/setting/change-phone'">📞 전화번호 변경</button></li>
+            </ul>
+          `;
+        } else {
+          modalBody.innerHTML = `<p><b>${item.innerText.trim()}</b>에 대한 설정 UI가 여기에 추가될 예정입니다.</p>`;
+        }
+
+        modal.style.display = 'flex';
+      });
+    });
+
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+    };
+    window.onclick = (e) => {
+      if (e.target === modal) modal.style.display = 'none';
+    };
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅 - Group3 SNS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-container {
+            height: 100vh;
+            overflow: hidden;
+        }
+        .chat-sidebar {
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .chat-main {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .message {
+            margin-bottom: 15px;
+        }
+        .message.own {
+            text-align: right;
+        }
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+        }
+        .message.own .message-bubble {
+            background-color: #007bff;
+            color: white;
+        }
+        .message.other .message-bubble {
+            background-color: white;
+            border: 1px solid #dee2e6;
+        }
+        .chat-input {
+            border-top: 1px solid #dee2e6;
+            padding: 15px;
+            background-color: white;
+        }
+        .room-item {
+            cursor: pointer;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .room-item:hover {
+            background-color: #e9ecef;
+        }
+        .room-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .unread-badge {
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.8em;
+            padding: 2px 6px;
+        }
+        .typing-indicator {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+        .user-search-item {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .user-search-item:hover {
+            background-color: #f8f9fa;
+        }
+        .selected-user-tag {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid chat-container">
+        <div class="row h-100">
+            <!-- 채팅방 목록 사이드바 -->
+            <div class="col-md-4 chat-sidebar">
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">채팅</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="showUserSearch()">
+                                    <i class="fas fa-user"></i> 1:1 채팅
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="showGroupCreate()">
+                                    <i class="fas fa-users"></i> 그룹 채팅
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 채팅방 목록 -->
+                <div id="chatRoomList" class="list-group list-group-flush">
+                    <!-- 동적으로 채워질 영역 -->
+                </div>
+            </div>
+            
+            <!-- 채팅 메인 영역 -->
+            <div class="col-md-8 chat-main">
+                <div id="chatHeader" class="p-3 border-bottom bg-white" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0" id="chatTitle">채팅방</h6>
+                            <small class="text-muted" id="chatParticipants"></small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item text-danger" href="#" onclick="leaveRoom()">
+                                    <i class="fas fa-sign-out-alt"></i> 채팅방 나가기
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 메시지 영역 -->
+                <div id="chatMessages" class="chat-messages">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <p>채팅방을 선택해주세요.</p>
+                    </div>
+                </div>
+                
+                <!-- 타이핑 인디케이터 -->
+                <div id="typingIndicator" class="px-3 py-2" style="display: none;">
+                    <span class="typing-indicator"></span>
+                </div>
+                
+                <!-- 메시지 입력 영역 -->
+                <div id="chatInput" class="chat-input" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control" 
+                               placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사용자 검색 모달 -->
+    <div class="modal fade" id="userSearchModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">1:1 채팅 시작하기</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" id="userSearchInput" class="form-control" 
+                               placeholder="사용자 이름 검색..." onkeyup="searchUsers()">
+                    </div>
+                    <div id="userSearchResults">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <p>사용자 이름을 입력해서 검색해보세요.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 그룹 채팅 생성 모달 -->
+    <div class="modal fade" id="groupCreateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">그룹 채팅 만들기</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">그룹 이름</label>
+                        <input type="text" id="groupNameInput" class="form-control" 
+                               placeholder="그룹 채팅 이름을 입력하세요">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">참여자 검색</label>
+                        <input type="text" id="groupUserSearchInput" class="form-control" 
+                               placeholder="추가할 사용자 검색..." onkeyup="searchGroupUsers()">
+                    </div>
+                    <div id="groupUserSearchResults" class="mb-3">
+                        <!-- 검색 결과 -->
+                    </div>
+                    <div id="selectedUsers">
+                        <label class="form-label">선택된 참여자</label>
+                        <div id="selectedUsersList">
+                            <div class="text-muted">선택된 사용자가 없습니다.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" onclick="createGroupRoom()">그룹 생성</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script th:inline="javascript">
+        // 전역 변수
+        let stompClient = null;
+        let currentRoomId = null;
+        let currentUser = /*[[${currentUser}]]*/ '';
+        let currentUserNickname = /*[[${currentUserNickname}]]*/ '';
+        let selectedUsers = [];
+        let typingTimeout = null;
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드 완료, 현재 사용자:', currentUser, currentUserNickname);
+            connect();
+            loadChatRooms();
+        });
+
+        // WebSocket 연결
+        function connect() {
+            const socket = new SockJS('/ws-chat');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('WebSocket 연결 성공: ' + frame);
+                
+                // 에러 메시지 구독
+                stompClient.subscribe('/user/queue/errors', function(error) {
+                    alert('오류: ' + error.body);
+                });
+            }, function(error) {
+                console.error('WebSocket 연결 실패:', error);
+            });
+        }
+
+        // 채팅방 목록 로드
+        function loadChatRooms() {
+            console.log('채팅방 목록 로드 시작');
+            fetch('/chat/api/rooms')
+                .then(response => {
+                    console.log('채팅방 목록 응답:', response);
+                    return response.json();
+                })
+                .then(rooms => {
+                    console.log('채팅방 목록:', rooms);
+                    const roomList = document.getElementById('chatRoomList');
+                    roomList.innerHTML = '';
+                    
+                    if (rooms.length === 0) {
+                        roomList.innerHTML = '<div class="p-3 text-center text-muted">채팅방이 없습니다.<br>새 채팅을 시작해보세요!</div>';
+                    } else {
+                        rooms.forEach(room => {
+                            const roomItem = createRoomItem(room);
+                            roomList.appendChild(roomItem);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('채팅방 목록 로드 실패:', error);
+                    const roomList = document.getElementById('chatRoomList');
+                    roomList.innerHTML = '<div class="p-3 text-center text-danger">채팅방 목록 로드 실패</div>';
+                });
+        }
+
+        // 채팅방 아이템 생성
+        function createRoomItem(room) {
+            const div = document.createElement('div');
+            div.className = 'room-item p-3';
+            div.onclick = () => selectRoom(room.roomId);
+            
+            const displayName = room.roomType === 'PRIVATE' ? 
+                room.participants.find(p => p.userNickname !== currentUserNickname)?.userNickname || '알 수 없는 사용자' :
+                room.roomName;
+            
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${escapeHtml(displayName)}</h6>
+                        <p class="mb-0 text-muted small">
+                            ${room.lastMessage ? escapeHtml(room.lastMessage.content) : '메시지가 없습니다.'}
+                        </p>
+                    </div>
+                    <div class="text-end">
+                        ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
+                        <div class="text-muted small">${room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}</div>
+                    </div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // 사용자 검색 모달 표시
+        function showUserSearch() {
+            console.log('사용자 검색 모달 표시');
+            const modal = new bootstrap.Modal(document.getElementById('userSearchModal'));
+            modal.show();
+            
+            // 검색 입력창 초기화
+            document.getElementById('userSearchInput').value = '';
+            document.getElementById('userSearchResults').innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-search fa-2x mb-2"></i>
+                    <p>사용자 이름을 입력해서 검색해보세요.</p>
+                </div>
+            `;
+        }
+
+        // 그룹 채팅 생성 모달 표시
+        function showGroupCreate() {
+            console.log('그룹 채팅 생성 모달 표시');
+            const modal = new bootstrap.Modal(document.getElementById('groupCreateModal'));
+            modal.show();
+            
+            // 입력창들 초기화
+            document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupUserSearchInput').value = '';
+            document.getElementById('groupUserSearchResults').innerHTML = '';
+            selectedUsers = [];
+            updateSelectedUsersList();
+        }
+
+        // 사용자 검색
+        function searchUsers() {
+            const keyword = document.getElementById('userSearchInput').value.trim();
+            console.log('사용자 검색:', keyword);
+            
+            if (keyword.length < 2) {
+                document.getElementById('userSearchResults').innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>최소 2글자 이상 입력해주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            fetch(`/chat/api/users/search?keyword=${encodeURIComponent(keyword)}`)
+                .then(response => {
+                    console.log('사용자 검색 응답:', response);
+                    return response.json();
+                })
+                .then(users => {
+                    console.log('검색된 사용자들:', users);
+                    const results = document.getElementById('userSearchResults');
+                    results.innerHTML = '';
+                    
+                    if (users.length === 0) {
+                        results.innerHTML = `
+                            <div class="text-center text-muted">
+                                <i class="fas fa-user-slash fa-2x mb-2"></i>
+                                <p>검색 결과가 없습니다.</p>
+                            </div>
+                        `;
+                    } else {
+                        users.forEach(user => {
+                            const userDiv = document.createElement('div');
+                            userDiv.className = 'user-search-item d-flex justify-content-between align-items-center';
+                            userDiv.innerHTML = `
+                                <div>
+                                    <strong>${escapeHtml(user.nickname)}</strong>
+                                    <div class="text-muted small">${escapeHtml(user.email)}</div>
+                                </div>
+                                <button class="btn btn-sm btn-primary" onclick="startPrivateChat(${user.userId})">
+                                    채팅하기
+                                </button>
+                            `;
+                            results.appendChild(userDiv);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('사용자 검색 실패:', error);
+                    document.getElementById('userSearchResults').innerHTML = `
+                        <div class="text-center text-danger">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>검색 중 오류가 발생했습니다.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // 1:1 채팅 시작 (함수 이름 수정)
+        function startPrivateChat(targetUserId) {
+            console.log('1:1 채팅 시작, 대상 사용자 ID:', targetUserId);
+            
+            fetch('/chat/api/rooms/private', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    targetUserId: targetUserId
+                })
+            })
+            .then(response => {
+                console.log('1:1 채팅방 생성 응답:', response);
+                return response.json();
+            })
+            .then(room => {
+                console.log('생성된 채팅방:', room);
+                // 모달 닫기
+                const modal = bootstrap.Modal.getInstance(document.getElementById('userSearchModal'));
+                modal.hide();
+                
+                // 채팅방 목록 새로고침
+                loadChatRooms();
+                
+                // 새로 생성된 채팅방으로 이동
+                setTimeout(() => {
+                    selectRoom(room.roomId);
+                }, 500);
+            })
+            .catch(error => {
+                console.error('1:1 채팅방 생성 실패:', error);
+                alert('채팅방 생성에 실패했습니다: ' + error.message);
+            });
+        }
+
+        // 채팅방 선택
+        function selectRoom(roomId) {
+            console.log('채팅방 선택:', roomId);
+            // 이전 구독 해제
+            if (currentRoomId && stompClient) {
+                stompClient.unsubscribe('/topic/room/' + currentRoomId);
+                stompClient.unsubscribe('/topic/room/' + currentRoomId + '/typing');
+            }
+            
+            currentRoomId = roomId;
+            
+            // UI 업데이트
+            document.querySelectorAll('.room-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 채팅 영역 표시
+            document.getElementById('chatHeader').style.display = 'block';
+            document.getElementById('chatInput').style.display = 'block';
+            
+            // 메시지 로드
+            loadMessages(roomId);
+            
+            // 메시지 읽음 처리
+            markAsRead(roomId);
+            
+            // 새 구독 설정
+            if (stompClient) {
+                stompClient.subscribe('/topic/room/' + roomId, function(message) {
+                    const messageData = JSON.parse(message.body);
+                    displayMessage(messageData);
+                });
+                
+                stompClient.subscribe('/topic/room/' + roomId + '/typing', function(typingData) {
+                    const data = JSON.parse(typingData.body);
+                    showTypingIndicator(data);
+                });
+            }
+        }
+
+        // 메시지 로드
+        function loadMessages(roomId) {
+            fetch(`/chat/api/rooms/${roomId}/messages?page=0&size=50`)
+                .then(response => response.json())
+                .then(data => {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = '';
+                    
+                    // 메시지를 시간순으로 정렬 (오래된 것부터)
+                    const messages = data.content.reverse();
+                    
+                    messages.forEach(message => {
+                        displayMessage(message);
+                    });
+                    
+                    // 스크롤을 맨 아래로
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('메시지 로드 실패:', error);
+                });
+        }
+
+        // 메시지 표시
+        function displayMessage(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            const isOwn = message.senderNickname === currentUserNickname;
+            messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${!isOwn ? `<div class="text-muted small mb-1">${escapeHtml(message.senderNickname)}</div>` : ''}
+                    <div>${escapeHtml(message.content)}</div>
+                    <div class="text-muted small mt-1">${formatTime(message.sentAt)}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 메시지 전송
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            
+            if (content && currentRoomId && stompClient) {
+                const message = {
+                    roomId: currentRoomId,
+                    content: content,
+                    senderNickname: currentUserNickname
+                };
+                
+                stompClient.send('/app/chat.sendMessage', {}, JSON.stringify(message));
+                messageInput.value = '';
+            }
+        }
+
+        // 키 입력 처리
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 메시지 읽음 처리
+        function markAsRead(roomId) {
+            fetch(`/chat/api/rooms/${roomId}/read`, {
+                method: 'POST'
+            })
+            .catch(error => {
+                console.error('읽음 처리 실패:', error);
+            });
+        }
+
+        // 타이핑 인디케이터 표시
+        function showTypingIndicator(data) {
+            if (data.senderNickname !== currentUserNickname) {
+                const indicator = document.getElementById('typingIndicator');
+                const span = indicator.querySelector('.typing-indicator');
+                
+                if (data.isTyping) {
+                    span.textContent = `${data.senderNickname}님이 입력 중...`;
+                    indicator.style.display = 'block';
+                } else {
+                    indicator.style.display = 'none';
+                }
+            }
+        }
+
+        // 유틸리티 함수들
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timeString) {
+            const date = new Date(timeString);
+            return date.toLocaleTimeString('ko-KR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        // 그룹 채팅 관련 함수 (나중에 구현)
+        function searchGroupUsers() {
+            console.log('그룹 사용자 검색 (미구현)');
+        }
+        
+        function createGroupRoom() {
+            console.log('그룹 채팅방 생성 (미구현)');
+        }
+        
+        function updateSelectedUsersList() {
+            console.log('선택된 사용자 목록 업데이트 (미구현)');
+        }
+        
+        function leaveRoom() {
+            console.log('채팅방 나가기 (미구현)');
+        }
+    </script>
+</body>
+</html>
