@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>친구 관리</title>
+  <style>
+    :root {
+      --background-color: #f4f6f8;
+      --card-background-color: #ffffff;
+      --text-color-primary: #2c3e50;
+      --text-color-secondary: #7f8c8d;
+      --accent-color: #8e44ad;
+      --accent-color-light: #9b59b6;
+      --divider-color: #e0e0e0;
+      --button-text-color: #ffffff;
+      --danger-color: #e74c3c;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      background-color: var(--background-color);
+      color: var(--text-color-primary);
+    }
+    .friend-management-container {
+      max-width: 768px;
+      margin: 20px auto;
+      background-color: var(--card-background-color);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .page-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .tabs {
+      display: flex;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .tab-button {
+      flex: 1;
+      padding: 15px 10px;
+      text-align: center;
+      font-size: 1.05em;
+      font-weight: 500;
+      color: var(--text-color-secondary);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      color: var(--accent-color);
+      border-bottom-color: var(--accent-color);
+    }
+    .search-filter-bar {
+      padding: 15px 25px;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .search-filter-bar input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--divider-color);
+      border-radius: 6px;
+      font-size: 0.95em;
+    }
+    .user-list-area {
+      padding: 10px 15px;
+      max-height: calc(100vh - 280px);
+      overflow-y: auto;
+    }
+    .user-card {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      border-bottom: 1px solid var(--divider-color);
+    }
+    .profile-picture {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 15px;
+      border: 1px solid var(--divider-color);
+    }
+    .user-info {
+      flex-grow: 1;
+    }
+    .display-name { font-size: 1.1em; font-weight: 600; }
+    .username { font-size: 0.9em; color: var(--text-color-secondary); }
+    .status-message {
+      font-size: 0.85em;
+      color: #555;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .user-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .relationship-status {
+      font-size: 0.8em;
+      color: var(--text-color-secondary);
+      padding: 4px 8px;
+      background-color: #ecf0f1;
+      border-radius: 4px;
+      display: none;
+    }
+    .relationship-status.mutual {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      display: inline-block;
+    }
+    .action-button {
+      padding: 7px 14px;
+      font-size: 0.9em;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .action-button.follow {
+      background-color: #fff;
+      color: var(--text-color-primary);
+      border: 1px solid var(--divider-color);
+    }
+    .action-button.following {
+      background-color: var(--accent-color);
+      color: var(--button-text-color);
+      border: none;
+    }
+    .empty-list-message {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-color-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="friend-management-container">
+    <header class="page-header">
+      <h1>친구 관리</h1>
+    </header>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="search">유저검색</button>
+      <button class="tab-button" data-tab="following">팔로잉</button>
+      <button class="tab-button" data-tab="followers">팔로워</button>
+    </div>
+    <div class="search-filter-bar">
+      <input type="text" id="user-search" placeholder="사용자 검색..." />
+    </div>
+    <div class="user-list-area" id="user-list"></div>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab-button');
+    const userListArea = document.getElementById('user-list');
+    const searchInput = document.getElementById('user-search');
+
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        loadUsers(tab.dataset.tab);
+      });
+    });
+
+    function loadUsers(tabType) {
+      if (tabType === "search") {
+        userListArea.innerHTML = '';
+        return;
+      }
+      const endpoint = tabType === "followers" 
+        ? "/api/follow/followers" 
+        : "/api/follow/following";
+      fetch(endpoint)
+        .then(res => res.json())
+        .then(users => renderUserList(users, tabType))
+        .catch(() => {
+          userListArea.innerHTML = '<p class="empty-list-message">사용자 목록을 불러오는 데 실패했습니다.</p>';
+        });
+    }
+
+    function renderUserList(users, tabType) {
+      userListArea.innerHTML = "";
+      if (users.length === 0) {
+        userListArea.innerHTML = '<div class="empty-list-message"><p>이 목록에는 아직 사용자가 없습니다.</p></div>';
+        return;
+      }
+
+      users.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.dataset.userid = user.userId;
+
+        // 기본 라벨/클래스
+        const defaultLabel = tabType === 'search' ? '팔로우'
+                            : tabType === 'followers' ? '맞팔로우'
+                            : '팔로잉';
+        const defaultClass = (tabType === 'search' || tabType === 'followers') 
+                            ? 'follow' : 'following';
+
+        card.innerHTML = `
+          <img src="${user.profileImage || 'https://via.placeholder.com/50'}" class="profile-picture">
+          <div class="user-info">
+            <div class="display-name">${user.nickname}</div>
+            <div class="username">@${user.loginId}</div>
+            <div class="status-message">${user.statusMessage || ''}</div>
+          </div>
+          <div class="user-actions">
+            <span class="relationship-status"></span>
+            <button class="action-button ${defaultClass}">${defaultLabel}</button>
+          </div>`;
+        userListArea.appendChild(card);
+
+        const btn = card.querySelector('button.action-button');
+        const status = card.querySelector('.relationship-status');
+
+        if (tabType === 'search') {
+          // 검색 탭: 실제 팔로잉 여부 체크
+          fetch(`/api/follow/isFollowing/${user.userId}`)
+            .then(res => res.json())
+            .then(isFollowing => {
+              if (isFollowing) {
+                btn.classList.remove('follow');
+                btn.classList.add('following');
+                btn.textContent = '팔로잉';
+              }
+            });
+        } else {
+          // 팔로잉/팔로워 탭: mutual 상태만 체크
+          fetch(`/api/follow/mutual/${user.userId}`)
+            .then(res => res.json())
+            .then(isMutual => {
+              if (isMutual) {
+                status.textContent = '맞팔로우 중';
+                status.classList.add('mutual');
+              } else if (tabType === 'followers') {
+                status.textContent = '나를 팔로우';
+                status.style.display = 'inline-block';
+              }
+            });
+        }
+      });
+    }
+
+    // 검색 입력 시
+    searchInput.addEventListener("input", function(e) {
+      const query = e.target.value.trim();
+      if (document.querySelector(".tab-button.active").dataset.tab !== "search") return;
+      if (query.length > 0) {
+        fetch(`/api/user/search?query=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(users => renderUserList(users, "search"));
+      } else {
+        userListArea.innerHTML = '';
+      }
+    });
+
+    // 팔로우/언팔로우 버튼 클릭
+    userListArea.addEventListener('click', e => {
+  const button = e.target.closest('.action-button');
+  if (!button) return;
+  const card = button.closest('.user-card');
+  const userId = card.dataset.userid;
+  const tab = document.querySelector('.tab-button.active').dataset.tab;
+
+  // “팔로잉(보라색)” 버튼 클릭 → 언팔로우
+ if (button.classList.contains('following')) {
+	 if (!confirm(`${card.querySelector('.display-name').textContent}님을 언팔로우하시겠습니까?`)) {
+		    return;  // 사용자가 취소를 누르면 함수 종료
+		  }
+  fetch(`/api/follow/${userId}`, { method: 'DELETE' })
+    .then(res => {
+      if (!res.ok) throw new Error('언팔로우 실패');
+
+      // ● 먼저 버튼 상태 리셋
+      button.classList.remove('following');
+      button.classList.add('follow');
+      button.textContent = '팔로우';
+
+      // ● 그 다음 탭별 후속 처리
+      if (tab === 'following') {
+        card.remove();
+      } else {
+        const status = card.querySelector('.relationship-status');
+        if (tab === 'followers') {
+          status.textContent = '나를 팔로우';
+          status.style.display = 'inline-block';
+          status.classList.remove('mutual');
+        } else { // search 탭
+          status.style.display = 'none';
+        }
+      }
+    })
+    .catch(err => console.error(err));
+}
+  // “팔로우(흰색)” 버튼 클릭 → 팔로우
+  else {
+    fetch(`/api/follow/${userId}`, { method: 'POST' })
+      .then(res => {
+        if (!res.ok) throw new Error('팔로우 실패');
+        button.classList.remove('follow');
+        button.classList.add('following');
+        button.textContent = (tab === 'followers') ? '맞팔로우' : '팔로잉';
+
+        fetch(`/api/follow/mutual/${userId}`)
+          .then(r => r.json())
+          .then(isMutual => {
+            const status = card.querySelector('.relationship-status');
+            if (isMutual) {
+              status.textContent = '맞팔로우 중';
+              status.classList.add('mutual');
+              status.style.display = 'inline-block';
+            }
+          });
+      })
+      .catch(err => console.error(err));
+  }
+});
+
+  </script>
+</body>
+</html>

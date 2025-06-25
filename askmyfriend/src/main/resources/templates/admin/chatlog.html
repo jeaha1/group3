@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>채팅 로그 관리 | 관리자 대시보드</title>
+  <style>
+    body {
+      background: #f7f7f7;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+      gap: 4px;
+    }
+    /* 사이드바 */
+    .sidebar {
+      width: 200px;
+      background: #232323;
+      color: #fff;
+      border-radius: 0 0 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 32px 0 24px 0;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.07);
+      min-height: 100vh;
+    }
+    .sidebar-title {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+    }
+    .sidebar-menu {
+      width: 100%;
+      flex: 1;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 0 12px 32px;
+      font-size: 16px;
+      color: #fff;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s;
+    }
+    .sidebar-link.active,
+    .sidebar-link:hover {
+      background: #30333a;
+      color: #4fc3f7;
+      border-left: 4px solid #4fc3f7;
+    }
+    .sidebar-link.logout {
+      color: #ff6666;
+      margin-top: 32px;
+      border-left: 4px solid transparent;
+    }
+    .sidebar-link.logout:hover {
+      background: #3a2323;
+      color: #ff8888;
+      border-left: 4px solid #ff8888;
+    }
+    .sidebar-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+    /* 채팅 로그 컨테이너 */
+    .chatlog-container {
+      flex: 1;
+      max-width: 1000px;
+      margin: 40px 0 40px 0;
+      padding: 28px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      min-width: 0;
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 18px;
+      font-size: 22px;
+      color: #232323;
+      letter-spacing: 1px;
+    }
+    /* 검색/필터 바 */
+    .chatlog-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .chatlog-filter-bar input[type="text"], .chatlog-filter-bar select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .chatlog-filter-bar input[type="text"]:focus, .chatlog-filter-bar select:focus {
+      border-color: #4fc3f7;
+    }
+    .chatlog-filter-bar button {
+      background: #232323;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .chatlog-filter-bar button:hover {
+      background: #4fc3f7;
+      color: #232323;
+    }
+    /* 테이블 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      font-size: 15px;
+    }
+    th, td {
+      padding: 12px 8px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f0f0f0;
+      color: #232323;
+      font-weight: 600;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    .chat-status-normal { color: #24a148; font-weight: bold; }
+    .chat-status-reported {
+      color: #d32f2f;
+      font-weight: bold;
+      background: #ffe0e0 !important;
+    }
+    .chat-row-reported {
+      background: #fff3f3;
+      animation: blink 0.8s 2;
+    }
+    @keyframes blink {
+      0% { background: #fff3f3; }
+      50% { background: #ffd6d6; }
+      100% { background: #fff3f3; }
+    }
+    .chat-reporter {
+      color: #d32f2f;
+      font-size: 13px;
+      margin-left: 4px;
+    }
+    @media (max-width: 900px) {
+      .admin-layout { flex-direction: column; }
+      .sidebar { flex-direction: row; width: 100%; min-height: unset; border-radius: 0 0 18px 18px; }
+      .sidebar-menu { display: flex; flex-direction: row; }
+      .sidebar-link { padding: 12px 16px; font-size: 15px; border-left: none; border-bottom: 4px solid transparent; }
+      .sidebar-link.active, .sidebar-link:hover { border-left: none; border-bottom: 4px solid #4fc3f7; }
+      .sidebar-link.logout { margin-top: 0; }
+      .chatlog-container { margin: 20px 0 0 0; }
+    }
+    @media (max-width: 700px) {
+      .chatlog-container { padding: 8px; }
+      th, td { font-size: 13px; padding: 8px 4px; }
+    }
+  </style>
+  <script>
+    // 검색/필터 기능 (프론트엔드 단순 필터)
+    function filterChats() {
+      const userInput = document.getElementById('chatFilterUser').value.trim().toLowerCase();
+      const period = document.getElementById('chatFilterPeriod').value;
+      const table = document.getElementById('chatTable');
+      const trs = table.getElementsByTagName('tr');
+      const now = new Date(); // 예시 기준일
+      
+      for (let i = 1; i < trs.length; i++) {
+        const tds = trs[i].getElementsByTagName('td');
+        if (tds.length === 0) continue;
+        
+        const sender = tds[1].textContent.toLowerCase();
+        const message = tds[2].textContent.toLowerCase(); // ✅ 채팅 내용도 포함
+        let show = true;
+        if (userInput && !sender.includes(userInput)) 
+        	show = false;
+        const dateStr = tds[0].textContent.replace(/-/g, '/');
+        const chatDate = new Date(dateStr);
+        if (period) {
+          let diff = (now - chatDate) / (1000 * 60 * 60 * 24); // 일 단위
+          if (period === '1' && diff > 1) show = false;
+          if (period === '3' && diff > 3) show = false;
+          if (period === '7' && diff > 7) show = false;
+        }
+        trs[i].style.display = show ? '' : 'none';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('chatFilterBtn').addEventListener('click', filterChats);
+      document.getElementById('chatFilterUser').addEventListener('keyup', e => {
+        if (e.key === 'Enter') filterChats();
+      });
+      document.getElementById('chatFilterPeriod').addEventListener('change', filterChats);
+    });
+  </script>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- 사이드바 -->
+  <nav class="sidebar">
+      <div class="sidebar-title">관리자</div>
+      <div class="sidebar-menu">
+        <a class="sidebar-link active" href="/admin/dashboard"><span class="sidebar-icon">📊</span>대시보드</a>
+        <a class="sidebar-link" href="/admin/members"><span class="sidebar-icon">👥</span>회원 관리</a>
+        <a class="sidebar-link" href="/admin/reports"><span class="sidebar-icon">🚩</span>신고 관리</a>
+        <a class="sidebar-link" href="/admin/inquiries"><span class="sidebar-icon">💬</span>1:1 문의 관리</a>
+        <a class="sidebar-link" href="/admin/chatlog"><span class="sidebar-icon">💬</span>채팅 로그 보기</a>
+        <a class="sidebar-link" href="/admin/systemlog"><span class="sidebar-icon">📝</span>시스템 로그</a>
+        <a class="sidebar-link logout" href="/admin/logout"><span class="sidebar-icon">📕</span>로그아웃</a>
+      </div>
+    </nav>
+    <!-- 채팅 로그 테이블 -->
+    <div class="chatlog-container">
+      <h2>채팅 로그 관리</h2>
+      <form class="chatlog-filter-bar" onsubmit="event.preventDefault(); filterChats();">
+        <input type="text" id="chatFilterUser" placeholder="닉네임 또는 이메일 입력" />
+        <select id="chatFilterPeriod">
+          <option value="">전체 기간</option>
+          <option value="1">오늘</option>
+          <option value="3">최근 3일</option>
+          <option value="7">최근 7일</option>
+        </select>
+        <button type="submit" id="chatFilterBtn">🔍 검색</button>
+      </form>
+      <table id="chatTable">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>송신자</th>
+            <th>채팅 내용</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+       <tbody>
+  <tr th:each="chat : ${chatList}"
+      th:classappend="${chat.status} == '신고됨' ? 'chat-row-reported' : ''">
+    <td th:text="${chat.timestamp}">2024-06-15 13:02</td>
+    <td th:text="${chat.sender}">user01</td>
+    <td>
+      <span th:text="${chat.message}">채팅 내용</span>
+      <span class="chat-reporter" th:if="${chat.reporter != ''}">
+        🚨 신고자: <span th:text="${chat.reporter}"></span>
+      </span>
+    </td>
+    <td th:text="${chat.status}"
+        th:classappend="${chat.status} == '신고됨' ? ' chat-status-reported' : ' chat-status-normal'">
+    </td>
+  </tr>
+</tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

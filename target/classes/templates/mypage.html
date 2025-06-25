@@ -32,6 +32,7 @@
         <button onclick="showTab('replies', this)">답글</button>
         <button onclick="showTab('media', this)">미디어</button>
         <button onclick="showTab('likes', this)">마음에 들어요</button>
+        <button onclick="showTab( 'bookmarks' , this)">북마크</button> <!--  북마크 추가  -->
     </div>
     <!-- 탭별 내용 -->
     <div id="tab-content">
@@ -60,6 +61,13 @@
             </div>
             <div th:if="${#lists.isEmpty(likePosts)}">아직 좋아요한 게시물이 없습니다.</div>
         </div>
+        <div id="bookmarks" class="tab-pane" style="display:none;">
+        <div th:each="bookmark : ${bookmarkList}">
+            <!-- 북마크 표시 방식 예시 -->
+            <span th:text="${bookmark.title}">북마크 제목</span>
+        </div>
+        <div th:if="${#lists.isEmpty(bookmarkList)}">북마크가 없습니다.</div>
+    </div>
     </div>
     <!-- 프로필 수정 모달 -->
     <div id="editModal">

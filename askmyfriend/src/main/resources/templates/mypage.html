@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>마이페이지</title>
+    <link rel="stylesheet" th:href="@{/css/mypage.css}">
+</head>
+<body>
+<div class="main-container">
+    <!-- 배경(커버) 이미지 -->
+    <div class="cover-bg"
+         th:style="'background-image:url(' + (${user.backgroundImg} != null ? @{${user.backgroundImg}} : @{/img/cover_default.jpg}) + ');'"></div>
+    <div class="profile-section">
+        <div class="profile-circle">
+            <img th:src="${user.profileImg} != null ? @{${user.profileImg}} : @{/img/profile_default.jpg}" alt="프로필 이미지">
+        </div>
+        <div class="profile-info">
+            <h2 th:text="${user.username}">닉네임</h2>
+            <div class="profile-meta">
+                <span th:text="${user.followingCount} + ' 팔로잉'">0 팔로잉</span>
+                &nbsp;|&nbsp;
+                <span th:text="${user.followerCount} + ' 팔로워'">0 팔로워</span>
+                &nbsp;|&nbsp;
+                <span th:text="${#temporals.format(user.createdAt, 'yyyy년 M월 d일 가입')}">2025년 6월 10일 가입</span>
+            </div>
+            <div class="profile-desc" th:text="${user.bio}">자기소개 텍스트</div>
+        </div>
+        <button class="edit-btn" onclick="openModal()">프로필 수정</button>
+    </div>
+    <!-- 탭 메뉴 -->
+    <div class="tab-menu">
+        <button class="active" onclick="showTab('posts', this)">게시물</button>
+        <button onclick="showTab('replies', this)">답글</button>
+        <button onclick="showTab('media', this)">미디어</button>
+        <button onclick="showTab('likes', this)">마음에 들어요</button>
+    </div>
+    <!-- 탭별 내용 -->
+    <div id="tab-content">
+        <div id="posts" class="tab-pane">
+            <div th:each="post : ${posts}">
+                <span th:text="${post.title}">게시물 제목</span>
+            </div>
+            <div th:if="${#lists.isEmpty(posts)}">게시물이 없습니다.</div>
+        </div>
+        <div id="replies" class="tab-pane" style="display:none;">
+            <div th:each="reply : ${replyList}">
+                <span th:text="${reply.content}">답글 내용</span>
+                <span th:text="'→ ' + ${reply.postTitle}">게시물 제목</span>
+            </div>
+            <div th:if="${#lists.isEmpty(replyList)}">아직 작성한 답글이 없습니다.</div>
+        </div>
+        <div id="media" class="tab-pane" style="display:none;">
+            <div th:each="media : ${mediaList}">
+                <img th:src="@{${media.url}}" style="width:120px; margin:10px;">
+            </div>
+            <div th:if="${#lists.isEmpty(mediaList)}">업로드한 미디어가 없습니다.</div>
+        </div>
+        <div id="likes" class="tab-pane" style="display:none;">
+            <div th:each="like : ${likePosts}">
+                <span th:text="${like.title}">좋아요한 게시물 제목</span>
+            </div>
+            <div th:if="${#lists.isEmpty(likePosts)}">아직 좋아요한 게시물이 없습니다.</div>
+        </div>
+    </div>
+    <!-- 프로필 수정 모달 -->
+    <div id="editModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <form th:action="@{/mypage/updateProfile}" method="post" enctype="multipart/form-data">
+                <div class="cover-edit">
+                    <img id="coverPreview"
+                         th:src="${user.backgroundImg} != null ? @{${user.backgroundImg}} : @{/img/cover_default.jpg}"
+                         alt="커버 이미지">
+                    <label>
+                        <input type="file" name="backgroundImg" accept="image/*" style="display:none;" onchange="previewCover(event)">
+                        <span style="font-size:18px;">&#9998;</span>
+                    </label>
+                </div>
+                <div class="profile-edit">
+                    <div class="profile-img-wrapper">
+                        <img id="profilePreview"
+                             th:src="${user.profileImg} != null ? @{${user.profileImg}} : @{/img/profile_default.jpg}"
+                             alt="프로필 이미지">
+                        <button type="button" class="edit-profile-btn" onclick="document.getElementById('profileImgInput').click()">
+                            &#9998;
+                        </button>
+                        <input type="file" id="profileImgInput" name="profileImg" accept="image/*" style="display:none;" onchange="previewProfile(event)">
+                    </div>
+                </div>
+                <h2 style="margin-bottom:18px;font-size:1.3rem;">프로필 수정</h2>
+                <label>닉네임</label>
+                <input type="text" name="username" th:value="${user.username}" maxlength="30" required>
+                <label>자기소개</label>
+                <textarea name="bio" rows="3" maxlength="300" th:text="${user.bio}"></textarea>
+                <label>공개범위 설정</label>
+                <div class="custom-dropdown">
+                    <input type="hidden" name="privacy" id="privacyInput"
+                        th:value="${user.privacy != null ? user.privacy : 'public'}">
+                    <div class="dropdown-selected" id="dropdownSelected" onclick="toggleDropdown()">
+                        <span id="dropdownLabel"
+                              th:text="${user.privacy == 'public' or user.privacy == null} ? '전체공개' : (user.privacy == 'friends' ? '친구만 공개' : '비공개')">
+                            전체공개
+                        </span>
+                        <span class="dropdown-arrow">&#9662;</span>
+                    </div>
+                    <div class="dropdown-options" id="dropdownOptions">
+                        <div class="dropdown-option" onclick="selectPrivacy('public', '전체공개')">전체공개</div>
+                        <div class="dropdown-option" onclick="selectPrivacy('friends', '친구만 공개')">친구만 공개</div>
+                        <div class="dropdown-option" onclick="selectPrivacy('private', '비공개')">비공개</div>
+                    </div>
+                </div>
+                <button type="submit" class="edit-btn" style="width:100%;margin-top:20px;">저장</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/mypage.js}"></script>
+</body>
+</html>

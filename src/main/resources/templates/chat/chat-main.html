@@ -49,22 +49,88 @@
             background-color: white;
             border: 1px solid #dee2e6;
         }
+        
+        /* 타임스탬프 가시성 개선 */
+        .message-timestamp {
+            font-size: 0.75em;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.1);
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+        
+        .message.own .message-timestamp {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message.other .message-timestamp {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.7);
+        }
+        
         .chat-input {
             border-top: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
         }
+        
+        /* 채팅방 리스트 색상 차별화 */
         .room-item {
             cursor: pointer;
             border-bottom: 1px solid #dee2e6;
+            transition: all 0.2s ease;
         }
+        
+        .room-item:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        
+        .room-item:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .room-item:nth-child(3n) {
+            background-color: #f0f8ff;
+        }
+        
+        .room-item:nth-child(4n) {
+            background-color: #f9f9f9;
+        }
+        
+        .room-item:nth-child(5n) {
+            background-color: #fafafa;
+        }
+        
         .room-item:hover {
-            background-color: #e9ecef;
+            background-color: #e3f2fd !important;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+            transform: translateY(-1px);
         }
+        
         .room-item.active {
-            background-color: #007bff;
+            background-color: #007bff !important;
             color: white;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
         }
+        
+        /* 채팅방 리스트 타이밍 표시 개선 */
+        .room-timestamp {
+            font-size: 0.7em;
+            font-weight: 500;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .room-item.active .room-timestamp {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
         .unread-badge {
             background-color: #dc3545;
             color: white;
@@ -93,6 +159,67 @@
             margin: 2px;
             border-radius: 15px;
             font-size: 0.9em;
+        }
+        
+        /* 파일 업로드 관련 스타일 */
+        .file-attachment-btn {
+            border-radius: 0;
+            border-right: 1px solid #ced4da;
+        }
+        
+        .file-attachment-btn:last-child {
+            border-right: none;
+        }
+        
+        .message-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        
+        .message-file {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            margin: 5px 0;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-icon {
+            font-size: 1.5em;
+            color: #6c757d;
+        }
+        
+        .file-details {
+            flex-grow: 1;
+        }
+        
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .file-size {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        
+        #filePreview {
+            background-color: #f8f9fa;
+        }
+        
+        .preview-image {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -165,11 +292,36 @@
                 <!-- 메시지 입력 영역 -->
                 <div id="chatInput" class="chat-input" style="display: none;">
                     <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-secondary" onclick="triggerImageUpload()">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="triggerFileUpload()">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                            </div>
+                        </div>
                         <input type="text" id="messageInput" class="form-control" 
                                placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
                         <button class="btn btn-primary" onclick="sendMessage()">
                             <i class="fas fa-paper-plane"></i>
                         </button>
+                    </div>
+                    <!-- 파일 업로드 입력 (숨김) -->
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(this)">
+                    <input type="file" id="fileUpload" style="display: none;" onchange="uploadFile(this)">
+                    <!-- 파일 미리보기 영역 -->
+                    <div id="filePreview" style="display: none;" class="mt-2 p-2 border rounded">
+                        <div class="d-flex align-items-center">
+                            <div id="previewContent"></div>
+                            <button class="btn btn-sm btn-danger ms-2" onclick="cancelFileUpload()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="progress mt-2" id="uploadProgress" style="display: none;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -302,7 +454,7 @@
                 });
         }
 
-        // 채팅방 아이템 생성
+        // 채팅방 아이템 생성 (타임스탬프 개선)
         function createRoomItem(room) {
             const div = document.createElement('div');
             div.className = 'room-item p-3';
@@ -322,7 +474,7 @@
                     </div>
                     <div class="text-end">
                         ${room.unreadCount > 0 ? `<span class="unread-badge">${room.unreadCount}</span>` : ''}
-                        <div class="text-muted small">${room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}</div>
+                        <div class="room-timestamp">${room.lastMessageAt ? formatTime(room.lastMessageAt) : ''}</div>
                     </div>
                 </div>
             `;
@@ -520,7 +672,7 @@
                 });
         }
 
-        // 메시지 표시
+        // 메시지 표시 (타임스탬프 개선)
         function displayMessage(message) {
             const messagesContainer = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
@@ -528,11 +680,43 @@
             const isOwn = message.senderNickname === currentUserNickname;
             messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
             
+            let contentHtml = '';
+            
+            // 메시지 타입에 따른 content 생성
+            if (message.messageType === 'IMAGE') {
+                contentHtml = `
+                    <div class="message-image-container">
+                        <img src="${message.filePath}" alt="${escapeHtml(message.fileName)}" 
+                             class="message-image" onclick="openImageModal('${message.filePath}', '${escapeHtml(message.fileName)}')">
+                        <div class="file-name small text-muted mt-1">${escapeHtml(message.fileName)}</div>
+                    </div>
+                `;
+            } else if (message.messageType === 'FILE') {
+                const fileSize = formatFileSize(message.fileSize);
+                contentHtml = `
+                    <div class="message-file">
+                        <div class="file-info">
+                            <i class="fas fa-file file-icon"></i>
+                            <div class="file-details">
+                                <div class="file-name">${escapeHtml(message.fileName)}</div>
+                                <div class="file-size">${fileSize}</div>
+                            </div>
+                            <a href="${message.filePath}" download="${message.fileName}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // TEXT 메시지
+                contentHtml = `<div>${escapeHtml(message.content)}</div>`;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-bubble">
                     ${!isOwn ? `<div class="text-muted small mb-1">${escapeHtml(message.senderNickname)}</div>` : ''}
-                    <div>${escapeHtml(message.content)}</div>
-                    <div class="text-muted small mt-1">${formatTime(message.sentAt)}</div>
+                    ${contentHtml}
+                    <div class="message-timestamp">${formatTime(message.sentAt)}</div>
                 </div>
             `;
             
@@ -601,6 +785,167 @@
             return date.toLocaleTimeString('ko-KR', { 
                 hour: '2-digit', 
                 minute: '2-digit' 
+            });
+        }
+
+        // 파일 크기 포맷팅
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 이미지 업로드 트리거
+        function triggerImageUpload() {
+            document.getElementById('imageUpload').click();
+        }
+
+        // 파일 업로드 트리거
+        function triggerFileUpload() {
+            document.getElementById('fileUpload').click();
+        }
+
+        // 이미지 업로드 처리
+        function uploadImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // 파일 미리보기 표시
+            showFilePreview(file, 'IMAGE');
+            
+            // 업로드 실행
+            performFileUpload(file, 'image');
+        }
+
+        // 파일 업로드 처리
+        function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // 파일 미리보기 표시
+            showFilePreview(file, 'FILE');
+            
+            // 업로드 실행
+            performFileUpload(file, 'file');
+        }
+
+        // 파일 미리보기 표시
+        function showFilePreview(file, type) {
+            const preview = document.getElementById('filePreview');
+            const previewContent = document.getElementById('previewContent');
+            
+            let content = '';
+            if (type === 'IMAGE') {
+                const url = URL.createObjectURL(file);
+                content = `
+                    <img src="${url}" class="preview-image" alt="미리보기">
+                    <div class="ms-2">
+                        <div class="fw-bold">${file.name}</div>
+                        <div class="text-muted small">${formatFileSize(file.size)}</div>
+                    </div>
+                `;
+            } else {
+                content = `
+                    <i class="fas fa-file file-icon"></i>
+                    <div class="ms-2">
+                        <div class="fw-bold">${file.name}</div>
+                        <div class="text-muted small">${formatFileSize(file.size)}</div>
+                    </div>
+                `;
+            }
+            
+            previewContent.innerHTML = content;
+            preview.style.display = 'block';
+        }
+
+        // 파일 업로드 실행
+        function performFileUpload(file, type) {
+            if (!currentRoomId) {
+                alert('채팅방을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('roomId', currentRoomId);
+
+            const progressBar = document.querySelector('#uploadProgress .progress-bar');
+            const progressContainer = document.getElementById('uploadProgress');
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // XMLHttpRequest를 사용하여 업로드 진행률 추적
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // 업로드 성공 시 메시지 표시
+                        displayMessage(response.message);
+                        cancelFileUpload();
+                    } else {
+                        alert('파일 업로드에 실패했습니다: ' + (response.error || '알 수 없는 오류'));
+                        cancelFileUpload();
+                    }
+                } else {
+                    alert('파일 업로드에 실패했습니다.');
+                    cancelFileUpload();
+                }
+            });
+
+            xhr.addEventListener('error', function() {
+                alert('파일 업로드 중 오류가 발생했습니다.');
+                cancelFileUpload();
+            });
+
+            xhr.open('POST', `/chat/api/upload/${type}`);
+            xhr.send(formData);
+        }
+
+        // 파일 업로드 취소
+        function cancelFileUpload() {
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('fileUpload').value = '';
+            document.getElementById('uploadProgress').style.display = 'none';
+        }
+
+        // 이미지 모달 열기
+        function openImageModal(imagePath, fileName) {
+            // 간단한 이미지 모달 구현
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${escapeHtml(fileName)}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="${imagePath}" class="img-fluid" alt="${escapeHtml(fileName)}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // 모달이 닫힐 때 DOM에서 제거
+            modal.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal);
             });
         }
 

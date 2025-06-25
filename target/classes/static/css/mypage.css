@@ -21,7 +21,8 @@ body { background: #f5f8fa; }
 .profile-circle img {
     width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
 }
-.profile-info { margin-left: 38px; }
+.profile-info { margin-left: 38px;
+                margin-top: 65px; }
 .profile-info h2 { margin: 0 0 6px 0; font-size: 2.1rem; }
 .profile-meta { margin: 10px 0 0 0; color: #666; font-size: 1.05rem; }
 .profile-desc { margin: 14px 0 0 0; font-size: 1.12rem; }
@@ -34,7 +35,7 @@ body { background: #f5f8fa; }
     display: flex; margin: 40px auto 0 auto; border-bottom: 1.5px solid #eee; max-width: 900px;
 }
 .tab-menu button {
-    background: none; border: none; font-size: 1.13rem; padding: 14px 38px;
+    flex: 1 1 0;background: none; border: none; font-size: 1.13rem; padding: 14px 0; 
     cursor: pointer; color: #444; font-weight: bold; border-bottom: 2.5px solid transparent;
 }
 .tab-menu button.active { border-bottom: 2.5px solid #0a7cff; color: #0a7cff; }

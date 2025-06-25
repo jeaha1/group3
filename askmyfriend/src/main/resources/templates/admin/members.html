@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>회원 관리 | 관리자 대시보드</title>
+  <style>
+    body {
+      background: #f7f7f7;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+      gap: 4px;
+    }
+    .sidebar {
+      width: 200px;
+      background: #232323;
+      color: #fff;
+      border-radius: 0 0 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 32px 0 24px 0;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.07);
+      min-height: 100vh;
+    }
+    .sidebar-title {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+    }
+    .sidebar-menu {
+      width: 100%;
+      flex: 1;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 0 12px 32px;
+      font-size: 16px;
+      color: #fff;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s;
+    }
+    .sidebar-link.active,
+    .sidebar-link:hover {
+      background: #30333a;
+      color: #4fc3f7;
+      border-left: 4px solid #4fc3f7;
+    }
+    .sidebar-link.logout {
+      color: #ff6666;
+      margin-top: 32px;
+      border-left: 4px solid transparent;
+    }
+    .sidebar-link.logout:hover {
+      background: #3a2323;
+      color: #ff8888;
+      border-left: 4px solid #ff8888;
+    }
+    .sidebar-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+    .member-container {
+      flex: 1;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 28px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 18px;
+      font-size: 22px;
+      color: #232323;
+    }
+    .member-search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .member-search-bar input[type="text"] {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .member-search-bar input[type="text"]:focus {
+      border-color: #4fc3f7;
+    }
+    .member-search-bar button {
+      background: #232323;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .member-search-bar button:hover {
+      background: #4fc3f7;
+      color: #232323;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f0f0f0;
+      color: #232323;
+    }
+    .role-badge, .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #e0e0e0;
+      color: #232323;
+      position: relative;
+    }
+    .role-super { background: #ff9800; color: #fff; }
+    .role-admin { background: #232323; color: #fff; }
+    .role-editor { background: #4fc3f7; color: #fff; }
+    .status-active { background: #e0ffe0; color: #24a148; }
+    .status-blocked { background: #fff4e0; color: #ff9800; }
+    .status-deleted { background: #ffe0e0; color: #d32f2f; }
+    .dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      display: none;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      z-index: 100;
+    }
+    .dropdown.open {
+      display: block;
+    }
+    .dropdown button {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 8px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown button:hover {
+      background: #f0f0f0;
+    }
+  </style>
+  <script>
+    function searchMembers() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#memberTable tbody tr');
+      rows.forEach(row => {
+        const nickname = row.children[0].textContent.toLowerCase();
+        const email = row.children[1].textContent.toLowerCase();
+        if (!input || nickname.includes(input) || email.includes(input)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('searchInput').value = '';
+      searchMembers();
+
+      document.getElementById('searchButton').addEventListener('click', searchMembers);
+      document.getElementById('searchInput').addEventListener('keyup', e => {
+        if (e.key === 'Enter') searchMembers();
+      });
+
+      document.querySelectorAll('.role-badge').forEach(badge => {
+        badge.addEventListener('click', e => {
+          const dropdown = badge.nextElementSibling;
+          document.querySelectorAll('.role-dropdown').forEach(dd => dd.classList.remove('open'));
+          dropdown.classList.add('open');
+          e.stopPropagation();
+        });
+      });
+
+      document.querySelectorAll('.status-badge').forEach(badge => {
+        badge.addEventListener('click', e => {
+          const dropdown = badge.nextElementSibling;
+          document.querySelectorAll('.status-dropdown').forEach(dd => dd.classList.remove('open'));
+          dropdown.classList.add('open');
+          e.stopPropagation();
+        });
+      });
+
+      document.body.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown').forEach(dd => dd.classList.remove('open'));
+      });
+    });
+  </script>
+</head>
+<body>
+  <div class="admin-layout">
+    <nav class="sidebar">
+      <div class="sidebar-title">관리자</div>
+      <div class="sidebar-menu">
+        <a class="sidebar-link" href="/admin/dashboard"><span class="sidebar-icon">📊</span>대시보드</a>
+        <a class="sidebar-link active" href="/admin/members"><span class="sidebar-icon">👥</span>회원 관리</a>
+        <a class="sidebar-link" href="/admin/reports"><span class="sidebar-icon">🚩</span>신고 관리</a>
+        <a class="sidebar-link" href="/admin/inquiries"><span class="sidebar-icon">💬</span>1:1 문의 관리</a>
+        <a class="sidebar-link" href="/admin/chatlog"><span class="sidebar-icon">💬</span>채팅 로그 보기</a>
+        <a class="sidebar-link" href="/admin/systemlog"><span class="sidebar-icon">📝</span>시스템 로그</a>
+        <a class="sidebar-link logout" href="/admin/logout"><span class="sidebar-icon">📕</span>로그아웃</a>
+      </div>
+    </nav>
+    <div class="member-container">
+      <h2>회원 관리</h2>
+      <p th:text="'회원 수: ' + ${#lists.size(userList)}">회원 수</p>
+      <form class="member-search-bar" onsubmit="event.preventDefault(); searchMembers();">
+        <input type="text" id="searchInput" placeholder="닉네임 또는 이메일 입력" />
+        <button type="submit" id="searchButton"><span>🔍</span> 검색</button>
+      </form>
+      <table id="memberTable">
+        <thead>
+          <tr>
+            <th>닉네임</th>
+            <th>이메일</th>
+            <th>가입일</th>
+            <th>현재 권한</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="user : ${userList}">
+            <td th:text="${user.nickname}">닉네임</td>
+            <td th:text="${user.email}">이메일</td>
+            <td th:text="${#temporals.format(user.createdDate, 'yyyy-MM-dd')}">가입일</td>
+            <td style="position: relative;">
+  <span class="role-badge" aria-disabled="false"
+        th:text="${user.role != null ? user.role + ' ▼' : 'USER ▼'}">USER ▼</span>
+  <div class="dropdown role-dropdown">
+    <button>USER</button>
+    <button>ADMIN</button>
+    <button disabled>SUSPENDED</button>
+  </div>
+</td>
+
+<!-- 상태 -->
+<td style="position: relative;">
+  <form th:action="@{/admin/members/status}" method="post" style="display:inline;">
+    <input type="hidden" name="userId" th:value="${user.userId}" />
+    <select name="status" onchange="this.form.submit()">
+      <option value="ACTIVE" th:selected="${user.status == 'ACTIVE'}">활성</option>
+      <option value="SUSPENDED" th:selected="${user.status == 'SUSPENDED'}">정지</option>
+      <option value="DELETED" th:selected="${user.status == 'DELETED'}">탈퇴</option>
+    </select>
+  </form>
+</td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
