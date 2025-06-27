@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>새 게시물 만들기</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 800px;
+      background: #fff;
+      border-radius: 10px;
+      display: flex;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .image-preview {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-right: 1px solid #ddd;
+    }
+
+    .image-preview img {
+      max-width: 100%;
+      max-height: 300px;
+      display: none;
+      margin-top: 10px;
+    }
+
+    .form-area {
+      flex: 1.2;
+      padding: 0 20px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      resize: vertical;
+      padding: 10px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .dropdown {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .dropdown-toggle {
+      padding: 10px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      background: #fafafa;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      border: 1px solid #ccc;
+      background: #fff;
+      display: none;
+    }
+
+    .dropdown-menu div {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .dropdown-menu div:hover {
+      background-color: #eee;
+    }
+
+    .submit-btn {
+      padding: 10px 16px;
+      font-size: 16px;
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .submit-btn {
+      padding: 10px 5px;
+      font-size: 16px;
+      background-color: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    input[type="file"] {
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="image-preview">
+      <p>선택된 이미지 미리보기</p>
+      <img id="previewImg" src="#" alt="미리보기 이미지">
+    </div>
+
+    <div class="form-area">
+      <form th:action="@{/posts}" method="post" enctype="multipart/form-data" th:object="${postDto}">
+        <textarea th:field="*{content}" maxlength="5000" placeholder="내용을 입력하세요..."></textarea>
+
+        <div class="dropdown">
+          <div class="dropdown-toggle" onclick="toggleDropdown()">공개 범위 선택 ▼</div>
+          <div class="dropdown-menu" id="visibilityOptions">
+            <div onclick="selectVisibility('전체공개')">전체공개</div>
+            <div onclick="selectVisibility('친구만')">친구만</div>
+            <div onclick="selectVisibility('나만보기')">나만보기</div>
+          </div>
+          <input type="hidden" th:field="*{visibility}" id="visibilityField">
+        </div>
+
+        <input type="file" name="imageFile" accept="image/*" onchange="previewImage(this)">
+        <button type="submit" class="submit-btn">공유하기</button>
+        <button type="submit" class="submit-btn">글쓰기</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleDropdown() {
+      const menu = document.getElementById('visibilityOptions');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function selectVisibility(value) {
+      document.querySelector('.dropdown-toggle').innerText = value + ' ▼';
+      document.getElementById('visibilityField').value = value;
+      document.getElementById('visibilityOptions').style.display = 'none';
+    }
+
+    function previewImage(input) {
+      const preview = document.getElementById('previewImg');
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+  </script>
+</body>
+</html>

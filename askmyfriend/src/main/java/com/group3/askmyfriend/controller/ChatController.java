@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import com.group3.askmyfriend.dto.GroupChatRequestDTO; // ✅ 이 부분을 추가하세요.
 
 @Controller
 @RequestMapping("/chat")
@@ -72,16 +73,14 @@ public class ChatController {
      */
     @PostMapping("/api/rooms/group")
     @ResponseBody
-    public ResponseEntity<ChatRoomDTO> createGroupRoom(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<ChatRoomDTO> createGroupRoom(@RequestBody GroupChatRequestDTO request) {
         Long currentUserId = getCurrentUserId();
-        String roomName = (String) request.get("roomName");
-        @SuppressWarnings("unchecked")
-        List<Long> participantIds = (List<Long>) request.get("participantIds");
+        String roomName = request.getRoomName();
+        List<Long> participantIds = request.getParticipantIds();
         
         ChatRoomDTO room = chatService.createGroupRoom(roomName, participantIds, currentUserId);
         return ResponseEntity.ok(room);
     }
-
     /**
      * 채팅방 메시지 목록 조회
      */

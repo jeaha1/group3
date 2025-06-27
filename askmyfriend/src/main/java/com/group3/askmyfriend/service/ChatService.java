@@ -236,9 +236,6 @@ public class ChatService {
             .collect(Collectors.toList());
     }
 
-    /**
-     * 파일 업로드 처리
-     */
     public Map<String, Object> uploadFile(MultipartFile file, Long roomId, Long userId, String fileType) throws IOException {
         // 파일 유효성 검사
         validateFile(file, fileType);
@@ -257,7 +254,12 @@ public class ChatService {
         String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
         String savedFileName = UUID.randomUUID().toString() + fileExtension;
         
-        Path uploadDir = Paths.get("src/main/resources/static/uploads/chat");
+        // ⛔️ [수정 전]
+        // Path uploadDir = Paths.get("src/main/resources/static/uploads/chat");
+
+        // ✅ [수정 후] WebConfig와 경로 일치
+        Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads", "chat");
+        
         Files.createDirectories(uploadDir);
         
         Path filePath = uploadDir.resolve(savedFileName);
@@ -276,7 +278,7 @@ public class ChatService {
         message.setMessageType("IMAGE".equals(fileType) ? 
             ChatMessageEntity.MessageType.IMAGE : ChatMessageEntity.MessageType.FILE);
         message.setFileName(originalFileName);
-        message.setFilePath("/uploads/chat/" + savedFileName);
+        message.setFilePath("/uploads/chat/" + savedFileName); // 웹에서 접근 가능한 경로로 저장
         message.setFileSize(file.getSize());
         
         chatMessageRepository.save(message);

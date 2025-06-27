@@ -68,7 +68,9 @@ public class SecurityConfig {
                         new AntPathRequestMatcher("/css/**"),
                         new AntPathRequestMatcher("/js/**"),
                         new AntPathRequestMatcher("/images/**"),
-                        new AntPathRequestMatcher("/error/**")
+                        new AntPathRequestMatcher("/error/**"),
+                        new AntPathRequestMatcher("/api/auth/**") // ★ 이 줄 추가!
+
                 ).permitAll()
                 .anyRequest().authenticated()
         );

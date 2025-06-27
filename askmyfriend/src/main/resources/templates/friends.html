@@ -203,7 +203,7 @@
                             ? 'follow' : 'following';
 
         card.innerHTML = `
-          <img src="${user.profileImage || 'https://via.placeholder.com/50'}" class="profile-picture">
+          <img src="${user.profileImg  || 'https://via.placeholder.com/50'}" class="profile-picture">
           <div class="user-info">
             <div class="display-name">${user.nickname}</div>
             <div class="username">@${user.loginId}</div>

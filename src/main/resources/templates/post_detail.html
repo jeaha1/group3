@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>게시물 상세</title>
+    <link rel="stylesheet" th:href="@{/css/post_detail.css}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <!-- 상단 네비게이션 -->
+    <div class="header">
+        <a th:href="@{/mypage}" class="back-btn">← 마이페이지로</a>
+        <h1>게시물</h1>
+    </div>
+
+    <!-- 게시물 상세 내용 -->
+    <div class="post-detail">
+        <!-- 작성자 정보 -->
+        <div class="author-info" th:if="${post.author != null}">
+            <img th:src="${post.author.profileImg} != null ? @{${post.author.profileImg}} : @{/img/profile_default.jpg}" 
+                 alt="프로필" class="author-avatar">
+            <div class="author-details">
+                <span class="author-name" th:text="${post.author.nickname}">작성자</span>
+                <span class="post-date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+            </div>
+        </div>
+
+        <!-- 게시물 내용 -->
+        <div class="post-content">
+            <p th:text="${post.content}">게시물 내용</p>
+            
+            <!-- 이미지가 있는 경우 표시 -->
+            <div th:if="${post.imagePath != null and post.imagePath != ''}" class="post-image">
+                <img th:src="@{${post.imagePath}}" alt="게시물 이미지">
+            </div>
+        </div>
+
+        <!-- 좋아요/댓글 버튼 -->
+        <div class="action-buttons">
+            <button id="likeBtn" class="action-btn like-btn" th:data-post-id="${post.id}">
+                ❤️ <span id="likeCount" th:text="${likeCount}">0</span>
+            </button>
+            <button class="action-btn comment-btn" onclick="focusCommentInput()">
+                💬 <span th:text="${comments.size()}">0</span>
+            </button>
+        </div>
+
+        <!-- 댓글 작성 폼 -->
+        <div class="comment-form">
+            <form th:action="@{/posts/{postId}/comment(postId=${post.id})}" method="post">
+                <div class="comment-input-wrapper">
+                    <textarea name="content" id="commentInput" placeholder="댓글을 입력하세요..." rows="3" required></textarea>
+                    <button type="submit" class="submit-btn">댓글 작성</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 댓글 섹션 -->
+        <div class="comments-section">
+            <h3>댓글 <span th:text="${comments.size()}">0</span>개</h3>
+            
+            <!-- 댓글 목록 -->
+            <div class="comments-list">
+                <div th:each="comment : ${comments}" class="comment-item">
+                    <div class="comment-author">
+                        <img th:src="${comment.author.profileImg} != null ? @{${comment.author.profileImg}} : @{/img/profile_default.jpg}" 
+                             alt="프로필" class="comment-avatar">
+                        <span class="comment-author-name" th:text="${comment.author.nickname}">댓글 작성자</span>
+                        <span class="comment-date" th:text="${#temporals.format(comment.createdAt, 'MM-dd HH:mm')}">날짜</span>
+                    </div>
+                    <p class="comment-content" th:text="${comment.content}">댓글 내용</p>
+                </div>
+            </div>
+            
+            <!-- 댓글이 없는 경우 -->
+            <div th:if="${#lists.isEmpty(comments)}" class="no-comments">
+                아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 좋아요 버튼 클릭 이벤트
+$('#likeBtn').click(function() {
+    const postId = $(this).data('post-id');
+    
+    $.ajax({
+        url: '/posts/' + postId + '/like',
+        type: 'POST',
+        success: function(response) {
+            if (response.success) {
+                $('#likeCount').text(response.likeCount);
+                // 좋아요 버튼 애니메이션
+                $('#likeBtn').addClass('liked');
+                setTimeout(() => $('#likeBtn').removeClass('liked'), 300);
+            } else {
+                alert(response.message || '오류가 발생했습니다');
+            }
+        },
+        error: function() {
+            alert('네트워크 오류가 발생했습니다');
+        }
+    });
+});
+
+// 댓글 입력창 포커스
+function focusCommentInput() {
+    document.getElementById('commentInput').focus();
+}
+</script>
+</body>
+</html>

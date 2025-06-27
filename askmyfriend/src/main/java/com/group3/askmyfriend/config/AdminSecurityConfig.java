@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @RequiredArgsConstructor
-@Order(1) // ★ 관리자용 보안 설정 먼저 적용
 public class AdminSecurityConfig {
 
     private final AdminDetailsService adminDetailsService;

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class AdminDetailsService implements UserDetailsService {
 
     private final AdminRepository adminRepository;
-
+//각주
     @Override
     public UserDetails loadUserByUsername(String adminId) throws UsernameNotFoundException {
         AdminEntity admin = adminRepository.findByAdminId(adminId)

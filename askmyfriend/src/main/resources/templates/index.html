@@ -1,167 +1,159 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8" />
   <title>Daily Log + Search Only</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
-    :root {
-      --bg-color: #f8f9fa;
-      --text-color: #000;
-      --sidebar-bg: #fff;
-      --sidebar-text: #333;
-      --content-bg: #fff;
-      --highlight: #4f46e5;
-      --button-bg: #4f46e5;
-      --button-text: #fff;
-      --border-color: #eee;
-    }
-
-    body.dark {
-      --bg-color: #2d3436;
-      --text-color: #dfe6e9;
-      --sidebar-bg: #1e1e1e;
-      --sidebar-text: #bbb;
-      --content-bg: #2f2f2f;
-      --highlight: #81ecec;
-      --button-bg: #636e72;
-      --button-text: #fff;
-      --border-color: #555;
-    }
-
     html, body {
       height: 100%; margin: 0; padding: 0;
       font-family: Arial, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
+      background: #f8f9fa;
+      transition: background 0.2s, color 0.2s;
     }
-
     body {
       display: flex; flex-direction: row;
       min-width: 1200px;
+      transition: background 0.2s, color 0.2s;
     }
-
     .sidebar {
-      width: 220px; background: var(--sidebar-bg);
-      border-right: 1px solid var(--border-color);
+      width: 220px; background: #fff;
+      border-right: 1px solid #eee;
       padding: 24px 0 0 0;
       box-sizing: border-box;
       flex-shrink: 0; display: flex;
       flex-direction: column;
       min-height: 100vh; height: 100vh;
-      color: var(--sidebar-text);
+      transition: background 0.2s, color 0.2s;
     }
-
     .sidebar .logo {
       font-weight: bold;
       margin-left: 24px;
       margin-bottom: 32px;
       font-size: 18px;
     }
-
     .sidebar .user {
       display: flex; align-items: center;
       margin-bottom: 32px;
       margin-left: 24px;
     }
-
     .sidebar .user img {
       width: 40px; height: 40px;
       border-radius: 50%;
       margin-right: 12px;
     }
-
     .sidebar ul {
       list-style: none;
       padding: 0;
-      margin: 0 0 24px 24px;
+      margin: 0 0 4px 24px;
     }
-
     .sidebar ul li {
       margin-bottom: 20px;
-      color: var(--sidebar-text);
+      color: #333;
       font-size: 16px;
       cursor: pointer;
     }
-
-    .sidebar ul li a {
-      color: inherit;
-      text-decoration: none;
+    
+    /* 설정 아래 구분선 - 간격 대폭 축소 */
+    .sidebar ul li:last-child {
+      position: relative;
+      padding-bottom: 4px;
     }
-
+    
+    .sidebar ul li:last-child::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: -5px;
+      height: 1px;
+      background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
+    }
+    
+    /* 새 글 쓰기 버튼 - 간격 통일 */
     .sidebar .new-post {
-      margin-left: 24px; margin-bottom: 16px;
-      padding: 8px 20px;
-      background:#4f46e5; 
-      color: var(--button-text);
+      display: block;
+      margin-left: 24px;
+      margin-bottom: 20px;
+      padding: 0;
+      background: none;
+      color: #333;
       border: none;
-      border-radius: 6px;
-      font-size: 15px;
+      font-size: 16px;
       cursor: pointer;
+      text-decoration: none;
+      text-align: left;
     }
-
-    .sidebar .toggle-theme {
-      margin-left: 24px; margin-bottom: 32px;
-      padding: 8px 20px;
-      background: #4f46e5; 
-      color: var(--button-text);
+    
+    /* 다크모드 토글 - 간격 통일 */
+    .toggle-theme {
+      margin-left: 24px;
+      margin-bottom: 20px;
+      background: none;
       border: none;
-      border-radius: 6px;
-      font-size: 14px;
+      font-size: 20px;
       cursor: pointer;
+      color: #888;
+      padding: 0;
+      transition: all 0.2s ease;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
     }
-
+    
+    .toggle-theme:hover {
+      color: #333;
+    }
+    
+    /* 로그아웃 - 간격 통일 */
     .sidebar .logout {
       margin-left: 24px;
       color: #888;
-      font-size: 15px;
+      font-size: 16px;
       cursor: pointer;
+      margin-bottom: 20px;
     }
-
+    
     .search-page-container {
       flex: 1;
-      background: var(--content-bg);
+      background: #fff;
       padding: 40px 24px 0 24px;
       box-sizing: border-box;
       overflow-y: auto;
       height: 100vh;
       display: flex;
       flex-direction: column;
+      transition: background 0.2s, color 0.2s;
     }
-
     .search-header {
       margin-bottom: 24px;
     }
-
     .search-bar-wrapper {
       display: flex;
       align-items: center;
-      border: 1px solid var(--border-color);
+      border: 1px solid #ddd;
       border-radius: 6px;
       padding: 6px 12px;
       background: #fefefe;
     }
-
     .search-icon {
       margin-right: 8px;
       font-size: 18px;
     }
-
     #main-search-input {
       border: none;
       outline: none;
       width: 100%;
       font-size: 15px;
       background: transparent;
-      color: inherit;
     }
-
     .search-options-tabs {
       display: flex;
       gap: 8px;
       margin-bottom: 24px;
     }
-
     .tab-button {
       flex: 1;
       padding: 8px 0;
@@ -173,180 +165,418 @@
       color: #555;
       transition: background-color 0.3s;
     }
-
     .tab-button.active {
       background: #4f46e5;
       color: #fff;
       font-weight: bold;
     }
-
     .search-content-area {
       font-size: 14px;
-      color: var(--text-color);
+      color: #333;
       flex: 1;
       display: flex;
       flex-direction: column;
       min-height: 0;
     }
-
     .tab-content {
       display: none;
       flex: 1;
     }
-
     .tab-content.active {
       display: block;
     }
-
     .content-section {
       margin-bottom: 24px;
     }
-
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-
-    .see-all-link {
-      font-size: 13px;
-      color: var(--highlight);
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .recommended-users-list,
-    .popular-posts-grid,
-    .popular-hashtags-list {
-      display: none;
-    }
-
     .no-results {
       text-align: center;
       color: #888;
       margin-top: 40px;
     }
-
     .no-results .icon {
       font-size: 48px;
       display: block;
       margin-bottom: 12px;
     }
+
+    /* 게시물 스타일 - 상단 부분 */
+    .content-section > div {
+      border: 2px solid #f0f0f0 !important;
+      padding: 16px !important;
+      margin-bottom: 0px !important;
+      max-width: 600px !important;
+      font-size: 14px !important;
+      background: #ffffff !important;
+      border-radius: 8px 8px 0 0 !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    /* 게시물 하단에 구분선 추가 */
+    .content-section > div::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 16px;
+      right: 16px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #e0e0e0 20%, #e0e0e0 80%, transparent);
+    }
+
+    /* 좋아요 버튼 스타일링 */
+    .like-button {
+      border: none !important;
+      background: none !important;
+      font-size: 20px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .like-button:not(.liked) {
+      color: #ddd;
+    }
+
+    .like-button:not(.liked):before {
+      content: '🤍';
+    }
+
+    .like-button.liked:before {
+      content: '❤️';
+    }
+
+    .like-button:hover {
+      transform: scale(1.1);
+    }
+
+    /* 댓글 아이콘 스타일링 */
+    .comment-icon {
+      font-size: 20px !important;
+      color: #666;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      margin: 0 !important;
+    }
+
+    .comment-icon:hover {
+      color: #4f46e5;
+    }
+
+    /* 상호작용 버튼 그룹 */
+    .interaction-buttons {
+      display: flex;
+      align-items: center;
+      gap: 1px !important;
+      margin-top: 8px;
+    }
+
+    /* 숫자 텍스트 스타일 */
+    .like-count, .comment-count {
+      color: #555;
+      font-size: 14px;
+      margin: 0 6px 0 1px !important;
+    }
+
+    /* 댓글창 스타일 - 하단 부분 */
+    .comments-section {
+      margin-left: 0px !important;
+      margin-top: 0px !important;
+      border: 2px solid #f0f0f0;
+      border-top: none !important;
+      border-radius: 0 0 8px 8px !important;
+      padding: 12px;
+      background: #fafafa;
+      max-width: 600px !important;
+    }
+
+    .comment-form {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .comment-form input[type="text"] {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .comment-form button {
+      padding: 8px 16px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .comments-list {
+      list-style: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .comments-list li {
+      padding: 8px 0 !important;
+      border-bottom: 1px solid #f0f0f0;
+      line-height: 1.4;
+    }
+
+    .comments-list li:last-child {
+      border-bottom: none;
+    }
+
+    /* 다크모드 스타일 */
+    body.dark,
+    body.dark .sidebar,
+    body.dark .search-page-container {
+      background: #181a1b !important;
+      color: #e6e6e6 !important;
+    }
+    body.dark .sidebar {
+      background: #1a1c1e;
+      border-right: 1px solid #222;
+    }
+    body.dark .sidebar ul li,
+    body.dark .sidebar .logo,
+    body.dark .sidebar .logout,
+    body.dark .sidebar .new-post {
+      color: #e6e6e6;
+    }
+    
+    /* 다크모드 설정 구분선 */
+    body.dark .sidebar ul li:last-child::after {
+      background: linear-gradient(to right, #404040 20%, #404040 80%, transparent);
+    }
+    
+    /* 다크모드 토글 버튼 */
+    body.dark .toggle-theme {
+      color: #e6e6e6;
+    }
+    
+    body.dark .toggle-theme:hover {
+      color: #fff;
+    }
+    
+    body.dark .search-bar-wrapper {
+      background: #23272a;
+      border: 1px solid #333;
+    }
+    body.dark .tab-button {
+      background: #23272a;
+      color: #ccc;
+    }
+    body.dark .tab-button.active {
+      background: #6366f1;
+      color: #fff;
+    }
+    body.dark .no-results {
+      color: #aaa;
+    }
+
+    /* 다크모드 게시물 및 댓글 */
+    body.dark .content-section > div {
+      background: #2a2d31 !important;
+      border: 2px solid #404040 !important;
+      color: #e6e6e6 !important;
+    }
+
+    body.dark .content-section > div::after {
+      background: linear-gradient(to right, transparent, #404040 20%, #404040 80%, transparent);
+    }
+
+    body.dark .comments-section {
+      background: #23272a;
+      border: 2px solid #404040;
+      border-top: none !important;
+    }
+
+    body.dark .comment-form input[type="text"] {
+      background: #2a2d31;
+      border: 1px solid #404040;
+      color: #e6e6e6;
+    }
+
+    body.dark .comments-list li {
+      border-bottom: 1px solid #404040;
+    }
+
+    body.dark .comment-icon {
+      color: #aaa;
+    }
+
+    body.dark .comment-icon:hover {
+      color: #6366f1;
+    }
+
+    body.dark .like-count, 
+    body.dark .comment-count {
+      color: #ccc;
+    }
   </style>
 </head>
 <body>
-  <div class="sidebar">
-    <div class="logo">Daily Log</div>
-    <div class="user">
-      <img src="#" alt="User" />
-      <div>
-        <div>사용자명</div>
-        <div style="font-size:13px; color:#888;">email@example.com</div>
-      </div>
+<div class="sidebar">
+  <div class="logo">Daily Log</div>
+  <div class="user">
+    <img src="#" alt="User" />
+    <div>
+      <div>사용자명</div>
+      <div style="font-size:13px; color:#888;">email@example.com</div>
     </div>
-    <ul>
-     <ul>
-  <li onclick="location.href='/'">홈</li>
-  <li onclick="location.href='/alarm'">알람</li>
-  <li onclick="location.href='/friends'">친구 목록</li>
-  <li onclick="location.href='/chat'">채팅</li>
-  <li onclick="location.href='/live'">실시간 동영상</li>
-<li><a href="/mypage">내 프로필</a></li>
-  <li onclick="location.href='/setting'">설정</li>
-  <li onclick="location.href='/inquiry/form'">📬 1:1 문의하기</li>
-  <li onclick="location.href='/inquiry/list'">📄 내 문의 내역</li>
-</ul>
-
-          
-      
-    </ul>
-    <button class="new-post">+ 새 글 쓰기</button>
-    <button class="toggle-theme" onclick="toggleTheme()">🌙 다크모드 토글</button>
+  </div>
+  <ul>
+     <li onclick="location.href='/'">홈</li>
+     <li onclick="location.href='/alarm'">알람</li>
+     <li onclick="location.href='/friends'">친구 목록</li>
+     <li onclick="location.href='/chat'">채팅</li>
+     <li onclick="location.href='/live'">숏폼</li>
+     <li><a href="/mypage">내 프로필</a></li>
+     <li onclick="location.href='/setting'">설정</li>
+  </ul>
+  <a href="/posts/new" class="new-post">새 글 쓰기</a>
     <div class="logout">로그아웃</div>
-  </div>
+      <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+    
+</div>
 
-  <div class="search-page-container">
-    <header class="search-header">
-      <div class="search-bar-wrapper">
-        <span class="search-icon">🔍</span>
-        <input type="search" id="main-search-input" placeholder="검색어를 입력하세요..." />
-      </div>
-    </header>
-
-    <div class="search-options-tabs">
-      <button class="tab-button active" data-tab-target="all">전체</button>
-      <button class="tab-button" data-tab-target="posts">게시물</button>
-      <button class="tab-button" data-tab-target="users">@사용자</button>
-      <button class="tab-button" data-tab-target="hashtags">#해시태그</button>
+<div class="search-page-container">
+  <header class="search-header">
+    <div class="search-bar-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="main-search-input" placeholder="검색어를 입력하세요..." />
     </div>
+  </header>
 
-    <main class="search-content-area">
-      <div id="all-content" class="tab-content active"></div>
-      <div id="posts-content" class="tab-content">
-        <div class="no-results"><span class="icon">📄</span><p>게시물 검색 결과가 없습니다.</p></div>
-      </div>
-      <div id="users-content" class="tab-content">
-        <div class="no-results"><span class="icon">👤</span><p>사용자를 찾을 수 없습니다.</p></div>
-      </div>
-      <div id="hashtags-content" class="tab-content">
-        <div class="no-results"><span class="icon">#️⃣</span><p>관련 게시물이 없습니다.</p></div>
-      </div>
-    </main>
+  <div class="search-options-tabs">
+    <button class="tab-button active" data-tab-target="all">전체</button>
+    <button class="tab-button" data-tab-target="posts">게시물</button>
+    <button class="tab-button" data-tab-target="users">@사용자</button>
+    <button class="tab-button" data-tab-target="hashtags">#해시태그</button>
   </div>
 
-  <script>
-    const tabs = document.querySelectorAll('.search-options-tabs .tab-button');
-    const tabContents = document.querySelectorAll('.search-content-area .tab-content');
-    const searchInput = document.getElementById('main-search-input');
+  <main class="search-content-area">
+    <div id="all-content" class="tab-content active">
+      <div th:if="${#lists.isEmpty(posts)}" class="no-results">
+        <span class="icon">📄</span>
+        <p>게시물이 없습니다.</p>
+      </div>
+      <div th:if="${posts != null and !#lists.isEmpty(posts)}">
+        <div th:each="post : ${posts}" class="content-section">
+          <div>
+            <p th:text="${post.content}" style="font-size: 14px; margin-bottom: 10px;">내용</p>
+            <img th:if="${post.imagePath != null}" th:src="@{${post.imagePath}}"
+                 style="max-width: 400px; height: auto; display: block; margin: 0 auto 10px;">
+            <p style="color: #999;" th:text="'공개범위: ' + ${post.visibility}">공개범위</p>
+            
+            <div class="interaction-buttons">
+              <button type="button" class="like-button" th:attr="data-post-id=${post.id}, data-user-email=${user.email}" onclick="toggleLike(this)"></button>
+              <span class="like-count" th:attr="id='like-count-' + ${post.id}" th:text="${post.likeCount}">0</span>
+              <span class="comment-icon">💬</span>
+              <span class="comment-count" th:text="${post.commentCount}"></span>
+            </div>
+          </div>
+          
+          <div class="comments-section">
+            <form class="comment-form" th:action="@{/comments/{postId}(postId=${post.id})}" method="post">
+              <input type="hidden" name="authorEmail" th:value="${user.email}" />
+              <input type="text" name="content" placeholder="댓글을 입력하세요" required />
+              <button type="submit">등록</button>
+            </form>
+            <ul class="comments-list">
+              <li th:each="comment : ${post.comments}" th:text="${comment.author + ': ' + comment.content}"></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="posts-content" class="tab-content">
+      <div class="no-results"><span class="icon">📄</span><p>게시물 검색 결과가 없습니다.</p></div>
+    </div>
+    <div id="users-content" class="tab-content">
+      <div class="no-results"><span class="icon">👤</span><p>사용자를 찾을 수 없습니다.</p></div>
+    </div>
+    <div id="hashtags-content" class="tab-content">
+      <div class="no-results"><span class="icon">#️⃣</span><p>관련 게시물이 없습니다.</p></div>
+    </div>
+  </main>
+</div>
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+<script>
+  function toggleLike(button) {
+    const postId = button.getAttribute("data-post-id");
+    const userEmail = button.getAttribute("data-user-email") || "anonymous";
+    
+    // 좋아요 상태 토글
+    button.classList.toggle('liked');
+    
+    fetch(`/likes/${postId}?userEmail=${encodeURIComponent(userEmail)}`, {
+      method: 'POST'
+    })
+    .then(response => response.json())
+    .then(count => {
+      document.getElementById(`like-count-${postId}`).innerText = count;
+    })
+    .catch(error => {
+      console.error('좋아요 처리 중 오류 발생:', error);
+      // 에러 발생 시 상태 되돌리기
+      button.classList.toggle('liked');
+    });
+  }
 
-        const targetId = tab.dataset.tabTarget + '-content';
-        tabContents.forEach(content => {
-          content.classList.toggle('active', content.id === targetId);
-        });
+  const tabs = document.querySelectorAll('.search-options-tabs .tab-button');
+  const tabContents = document.querySelectorAll('.search-content-area .tab-content');
+  const searchInput = document.getElementById('main-search-input');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const targetId = tab.dataset.tabTarget + '-content';
+      tabContents.forEach(content => {
+        content.classList.toggle('active', content.id === targetId);
       });
     });
+  });
 
-    searchInput.addEventListener('keypress', function(event) {
-      if (event.key === 'Enter' && this.value.trim() !== '') {
-        const currentActiveTab = document.querySelector('.search-options-tabs .tab-button.active');
-        const searchType = currentActiveTab ? currentActiveTab.dataset.tabTarget : 'all';
-        performSearch(this.value.trim(), searchType);
-      }
-    });
-
-    function performSearch(query, type) {
-      tabContents.forEach(content => content.classList.remove('active'));
-      let targetContentId = type + '-content';
-      if (type === 'all' && query) {
-        targetContentId = 'posts-content';
-      }
-      const resultContentArea = document.getElementById(targetContentId);
-      if (resultContentArea) {
-        resultContentArea.classList.add('active');
-      }
+  searchInput.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter' && this.value.trim() !== '') {
+      const currentActiveTab = document.querySelector('.search-options-tabs .tab-button.active');
+      const searchType = currentActiveTab ? currentActiveTab.dataset.tabTarget : 'all';
+      performSearch(this.value.trim(), searchType);
     }
+  });
 
-    // ✅ 다크모드 로직
-    function toggleTheme() {
-      document.body.classList.toggle('dark');
-      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
-      localStorage.setItem('theme', theme);
+  function performSearch(query, type) {
+    tabContents.forEach(content => content.classList.remove('active'));
+    let targetContentId = type + '-content';
+    if (type === 'all' && query) {
+      targetContentId = 'posts-content';
     }
+    const resultContentArea = document.getElementById(targetContentId);
+    if (resultContentArea) {
+      resultContentArea.classList.add('active');
+    }
+  }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const saved = localStorage.getItem('theme');
-      if (saved === 'dark') {
-        document.body.classList.add('dark');
-      }
-    });
-  </script>
+  // 다크모드 로직
+  function toggleTheme() {
+    document.body.classList.toggle('dark');
+    const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+    localStorage.setItem('theme', theme);
+  }
+  
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') {
+      document.body.classList.add('dark');
+    }
+  });
+</script>
 </body>
 </html>
