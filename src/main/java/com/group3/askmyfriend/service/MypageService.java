@@ -32,7 +32,7 @@ public class MypageService {
     @Autowired
     private LikeRepository likeRepository;
 
-    // 마이페이지 정보 조회
+    // ⭐️ 마이페이지 정보 조회 (실시간 팔로우 수 계산 추가)
     public MypageDto getMypageInfo(String loginId) {
         UserEntity user = userRepository.findByLoginId(loginId)
             .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
@@ -47,24 +47,38 @@ public class MypageService {
             backgroundImg = "/img/cover_default.jpg";
         }
 
-        // 팔로잉/팔로워 수 실시간 집계
-        int followingCount = followRepository.countByFollower(user);
-        int followerCount = followRepository.countByFollowing(user);
+        // ⭐️ 실시간 팔로잉/팔로워 수 계산
+        int followingCount = 0;
+        int followerCount = 0;
+        
+        try {
+            // 내가 팔로우한 사람 수 (팔로잉 수)
+            followingCount = (int) followRepository.countByFollower(user);
+            // 나를 팔로우한 사람 수 (팔로워 수)
+            followerCount = (int) followRepository.countByFollowing(user);
+            
+            System.out.println("사용자 " + loginId + " - 팔로잉: " + followingCount + ", 팔로워: " + followerCount);
+            
+        } catch (Exception e) {
+            System.err.println("팔로우 수 계산 중 오류: " + e.getMessage());
+            // 오류 발생 시 기본값 0 사용
+        }
 
         return new MypageDto(
+            user.getLoginId(),       // loginId
             user.getNickname(),      // username
-            user.getLoginId(),       // userId
-            user.getBio(),           // 자기소개
-            profileImg,              // 프로필 이미지 (기본값 적용)
-            backgroundImg,           // 배경 이미지 (기본값 적용)
-            followingCount,          // 실시간 집계값
-            followerCount,           // 실시간 집계값
-            user.getCreatedDate(),
-            user.getPrivacy()
+            user.getLoginId(),       // userId (같은 값)
+            user.getBio(),           // bio
+            profileImg,              // profileImg (기본값 적용)
+            backgroundImg,           // backgroundImg (기본값 적용)
+            followingCount,          // ⭐️ 실시간 계산된 팔로잉 수
+            followerCount,           // ⭐️ 실시간 계산된 팔로워 수
+            user.getCreatedDate(),   // createdAt
+            user.getPrivacy()        // privacy
         );
     }
 
- // 본인이 작성한 게시물 목록
+    // 본인이 작성한 게시물 목록
     public List<PostEntity> getMyPosts(String loginId) {
         try {
             UserEntity user = userRepository.findByLoginId(loginId)
@@ -73,14 +87,6 @@ public class MypageService {
             List<PostEntity> posts = postRepository.findByAuthorOrderByCreatedAtDesc(user);
             System.out.println("조회된 게시물 수: " + posts.size());
             
-            // 테스트용 더미 데이터 추가
-           /* if (posts.isEmpty()) {
-                PostEntity dummyPost = new PostEntity();
-                dummyPost.setId(999L);
-                dummyPost.setContent("테스트 게시물입니다. 실제 게시물을 작성해보세요!");
-                posts.add(dummyPost);
-            }
-            */
             return posts;
         } catch (Exception e) {
             System.err.println("게시물 조회 중 오류: " + e.getMessage());
@@ -100,7 +106,7 @@ public class MypageService {
         }
     }
 
- // 본인이 좋아요를 누른 게시물 목록
+    // 본인이 좋아요를 누른 게시물 목록
     public List<PostEntity> getMyLikedPosts(String loginId) {
         try {
             UserEntity user = userRepository.findByLoginId(loginId)
@@ -115,8 +121,7 @@ public class MypageService {
         }
     }
 
-
- // 본인이 사진 첨부한 미디어 목록
+    // 본인이 사진 첨부한 미디어 목록
     public List<PostEntity> getMyMediaList(String loginId) {
         try {
             UserEntity user = userRepository.findByLoginId(loginId)
@@ -124,19 +129,32 @@ public class MypageService {
             
             List<PostEntity> media = postRepository.findByAuthorAndImageIsNotNullOrderByCreatedAtDesc(user);
             
-            // 테스트용 더미 데이터 추가
-           /* if (media.isEmpty()) {
-                PostEntity dummyMedia = new PostEntity();
-                dummyMedia.setId(998L);
-                dummyMedia.setContent("이미지가 첨부된 게시물을 작성해보세요!");
-                dummyMedia.setImagePath("/img/profile_default.jpg"); // 테스트용 이미지
-                media.add(dummyMedia);
-            }
-            */
             return media;
         } catch (Exception e) {
             System.err.println("미디어 조회 중 오류: " + e.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    // ⭐️ 팔로우 수 업데이트 메서드 추가 (팔로우/언팔로우 후 호출용)
+    public void updateFollowCounts(String loginId) {
+        try {
+            UserEntity user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
+            
+            // 실시간 팔로우 수 계산
+            int followingCount = (int) followRepository.countByFollower(user);
+            int followerCount = (int) followRepository.countByFollowing(user);
+            
+            // UserEntity의 팔로우 수 필드 업데이트 (선택사항)
+            user.setFollowingCount(followingCount);
+            user.setFollowerCount(followerCount);
+            userRepository.save(user);
+            
+            System.out.println("팔로우 수 업데이트 완료 - " + loginId + ": 팔로잉 " + followingCount + ", 팔로워 " + followerCount);
+            
+        } catch (Exception e) {
+            System.err.println("팔로우 수 업데이트 중 오류: " + e.getMessage());
         }
     }
 

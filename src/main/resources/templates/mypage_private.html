@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>비공개 계정</title>
+    <link rel="stylesheet" th:href="@{/css/mypage.css}">
+    <style>
+        .private-account-notice {
+            text-align: center;
+            padding: 80px 40px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .lock-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .private-account-notice h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .private-account-notice p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .profile-preview {
+            margin: 30px 0;
+        }
+
+        .private-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            object-fit: cover;
+        }
+
+        .back-home-btn {
+            display: inline-block;
+            background: #1da1f2;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .back-home-btn:hover {
+            background: #005ecb;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="private-account-notice">
+        <div class="lock-icon">🔒</div>
+        <h2>이 계정은 비공개입니다</h2>
+        <p th:text="${user.username} + '님의 게시물을 보려면 팔로우 요청을 보내세요.'">김재하님의 게시물을 보려면 팔로우 요청을 보내세요.</p>
+        
+        <div class="profile-preview">
+            <img th:src="${user.profileImg} != null ? @{${user.profileImg}} : @{/img/profile_default.jpg}" 
+                 alt="프로필" class="private-avatar">
+            <h3 th:text="${user.username}">김재하</h3>
+            <p th:if="${user.bio}" th:text="${user.bio}">서럽</p>
+        </div>
+        
+        <!-- ⭐️ 팔로우 요청 버튼 제거하고 홈으로 버튼만 남김 -->
+        <a th:href="@{/}" class="back-home-btn">홈으로 돌아가기</a>
+    </div>
+</div>
+</body>
+</html>

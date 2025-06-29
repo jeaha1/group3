@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -32,6 +32,14 @@
     .page-header {
       padding: 20px 25px;
       border-bottom: 1px solid var(--divider-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .back-btn {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 600;
     }
     .tabs {
       display: flex;
@@ -64,6 +72,7 @@
       border: 1px solid var(--divider-color);
       border-radius: 6px;
       font-size: 0.95em;
+      box-sizing: border-box;
     }
     .user-list-area {
       padding: 10px 15px;
@@ -83,18 +92,38 @@
       object-fit: cover;
       margin-right: 15px;
       border: 1px solid var(--divider-color);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .profile-picture:hover {
+      transform: scale(1.05);
     }
     .user-info {
       flex-grow: 1;
+      cursor: pointer;
     }
-    .display-name { font-size: 1.1em; font-weight: 600; }
-    .username { font-size: 0.9em; color: var(--text-color-secondary); }
+    .user-info:hover .display-name {
+      color: var(--accent-color);
+    }
+    .display-name { 
+      font-size: 1.1em; 
+      font-weight: 600; 
+      transition: color 0.2s;
+    }
+    .username { 
+      font-size: 0.9em; 
+      color: var(--text-color-secondary); 
+    }
     .status-message {
       font-size: 0.85em;
       color: #555;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .privacy-badge {
+      color: #e67e22;
+      margin-left: 5px;
     }
     .user-actions {
       display: flex;
@@ -119,16 +148,24 @@
       font-size: 0.9em;
       border-radius: 20px;
       cursor: pointer;
+      transition: all 0.2s;
     }
     .action-button.follow {
       background-color: #fff;
       color: var(--text-color-primary);
       border: 1px solid var(--divider-color);
     }
+    .action-button.follow:hover {
+      background-color: var(--accent-color);
+      color: white;
+    }
     .action-button.following {
       background-color: var(--accent-color);
       color: var(--button-text-color);
       border: none;
+    }
+    .action-button.following:hover {
+      background-color: var(--danger-color);
     }
     .empty-list-message {
       text-align: center;
@@ -141,7 +178,22 @@
   <div class="friend-management-container">
     <header class="page-header">
       <h1>친구 관리</h1>
+      <a th:href="@{/}" class="back-btn">← 홈으로</a>
     </header>
+    
+    <!-- 팔로잉/팔로워 데이터를 숨겨진 div에 저장 -->
+    <div id="following-data" style="display: none;">
+      <div th:each="friend : ${followingList}" class="user-data" 
+           th:attr="data-userid=${friend.loginId}, data-nickname=${friend.nickname}, data-bio=${friend.bio}, data-privacy=${friend.privacy}, data-profile=${friend.profileImg}">
+      </div>
+    </div>
+    
+    <div id="followers-data" style="display: none;">
+      <div th:each="follower : ${followerList}" class="user-data" 
+           th:attr="data-userid=${follower.loginId}, data-nickname=${follower.nickname}, data-bio=${follower.bio}, data-privacy=${follower.privacy}, data-profile=${follower.profileImg}">
+      </div>
+    </div>
+    
     <div class="tabs">
       <button class="tab-button active" data-tab="search">유저검색</button>
       <button class="tab-button" data-tab="following">팔로잉</button>
@@ -158,6 +210,11 @@
     const userListArea = document.getElementById('user-list');
     const searchInput = document.getElementById('user-search');
 
+    // ⭐️ 프로필 클릭 시 마이페이지로 이동하는 함수
+    function goToUserPage(userId) {
+      console.log('사용자 페이지로 이동:', userId);
+      window.location.href = `/mypage/user/${userId}`;
+    }
 
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
@@ -169,18 +226,24 @@
 
     function loadUsers(tabType) {
       if (tabType === "search") {
-        userListArea.innerHTML = '';
+        userListArea.innerHTML = '<div class="empty-list-message">검색어를 입력하세요</div>';
         return;
       }
-      const endpoint = tabType === "followers" 
-        ? "/api/follow/followers" 
-        : "/api/follow/following";
-      fetch(endpoint)
-        .then(res => res.json())
-        .then(users => renderUserList(users, tabType))
-        .catch(() => {
-          userListArea.innerHTML = '<p class="empty-list-message">사용자 목록을 불러오는 데 실패했습니다.</p>';
-        });
+      
+      // 서버에서 받은 데이터 사용
+      const dataDiv = document.getElementById(tabType + '-data');
+      const userDataElements = dataDiv.querySelectorAll('.user-data');
+      
+      const users = Array.from(userDataElements).map(el => ({
+        userId: el.getAttribute('data-userid'),
+        loginId: el.getAttribute('data-userid'),
+        nickname: el.getAttribute('data-nickname'),
+        bio: el.getAttribute('data-bio'),
+        privacy: el.getAttribute('data-privacy'),
+        profileImg: el.getAttribute('data-profile')
+      }));
+      
+      renderUserList(users, tabType);
     }
 
     function renderUserList(users, tabType) {
@@ -193,7 +256,8 @@
       users.forEach(user => {
         const card = document.createElement('div');
         card.className = 'user-card';
-        card.dataset.userid = user.userId;
+        // ⭐️ 중요: loginId를 문자열로 설정
+        card.dataset.userid = user.loginId;
 
         // 기본 라벨/클래스
         const defaultLabel = tabType === 'search' ? '팔로우'
@@ -202,125 +266,152 @@
         const defaultClass = (tabType === 'search' || tabType === 'followers') 
                             ? 'follow' : 'following';
 
+        // ⭐️ 수정된 부분: loginId 사용 확실히 하기
         card.innerHTML = `
-          <img src="${user.profileImage || 'https://via.placeholder.com/50'}" class="profile-picture">
-          <div class="user-info">
+          <img src="${user.profileImg || '/img/profile_default.jpg'}" 
+               class="profile-picture" 
+               onclick="goToUserPage('${user.loginId}')">
+          <div class="user-info" onclick="goToUserPage('${user.loginId}')">
             <div class="display-name">${user.nickname}</div>
             <div class="username">@${user.loginId}</div>
-            <div class="status-message">${user.statusMessage || ''}</div>
+            <div class="status-message">${user.bio || ''}</div>
+            ${user.privacy === 'private' ? '<span class="privacy-badge">🔒</span>' : ''}
           </div>
           <div class="user-actions">
             <span class="relationship-status"></span>
             <button class="action-button ${defaultClass}">${defaultLabel}</button>
           </div>`;
+        
         userListArea.appendChild(card);
-
-        const btn = card.querySelector('button.action-button');
-        const status = card.querySelector('.relationship-status');
-
-        if (tabType === 'search') {
-          // 검색 탭: 실제 팔로잉 여부 체크
-          fetch(`/api/follow/isFollowing/${user.userId}`)
-            .then(res => res.json())
-            .then(isFollowing => {
-              if (isFollowing) {
-                btn.classList.remove('follow');
-                btn.classList.add('following');
-                btn.textContent = '팔로잉';
-              }
-            });
-        } else {
-          // 팔로잉/팔로워 탭: mutual 상태만 체크
-          fetch(`/api/follow/mutual/${user.userId}`)
-            .then(res => res.json())
-            .then(isMutual => {
-              if (isMutual) {
-                status.textContent = '맞팔로우 중';
-                status.classList.add('mutual');
-              } else if (tabType === 'followers') {
-                status.textContent = '나를 팔로우';
-                status.style.display = 'inline-block';
-              }
-            });
-        }
       });
     }
 
-    // 검색 입력 시
+    // ⭐️ 팔로잉 데이터 실시간 업데이트 함수
+    function updateFollowingData(action, userId, userInfo = null) {
+      const followingDataDiv = document.getElementById('following-data');
+      
+      if (action === 'add' && userInfo) {
+        // 새로운 사용자 데이터 추가
+        const newUserData = document.createElement('div');
+        newUserData.className = 'user-data';
+        newUserData.setAttribute('data-userid', userInfo.loginId);
+        newUserData.setAttribute('data-nickname', userInfo.nickname);
+        newUserData.setAttribute('data-bio', userInfo.bio);
+        newUserData.setAttribute('data-privacy', userInfo.privacy);
+        newUserData.setAttribute('data-profile', userInfo.profileImg);
+        
+        followingDataDiv.appendChild(newUserData);
+        console.log('팔로잉 데이터에 추가:', userInfo.nickname);
+        
+      } else if (action === 'remove') {
+        // 기존 사용자 데이터 제거
+        const existingData = followingDataDiv.querySelector(`[data-userid="${userId}"]`);
+        if (existingData) {
+          existingData.remove();
+          console.log('팔로잉 데이터에서 제거:', userId);
+        }
+      }
+    }
+
+    // ⭐️ 검색 입력 시
     searchInput.addEventListener("input", function(e) {
       const query = e.target.value.trim();
       if (document.querySelector(".tab-button.active").dataset.tab !== "search") return;
       if (query.length > 0) {
-        fetch(`/api/user/search?query=${encodeURIComponent(query)}`)
+        console.log('검색 시도:', query);
+        fetch(`/friend-management/search?keyword=${encodeURIComponent(query)}`)
           .then(res => res.json())
-          .then(users => renderUserList(users, "search"));
+          .then(users => {
+            console.log('검색 결과:', users);
+            renderUserList(users, "search");
+          })
+          .catch((error) => {
+            console.error('검색 오류:', error);
+            userListArea.innerHTML = '<div class="empty-list-message">검색 중 오류가 발생했습니다.</div>';
+          });
       } else {
-        userListArea.innerHTML = '';
+        userListArea.innerHTML = '<div class="empty-list-message">검색어를 입력하세요</div>';
       }
     });
 
-    // 팔로우/언팔로우 버튼 클릭
+    // ⭐️ 팔로우/언팔로우 버튼 클릭 (실시간 업데이트 추가)
     userListArea.addEventListener('click', e => {
-  const button = e.target.closest('.action-button');
-  if (!button) return;
-  const card = button.closest('.user-card');
-  const userId = card.dataset.userid;
-  const tab = document.querySelector('.tab-button.active').dataset.tab;
+      const button = e.target.closest('.action-button');
+      if (!button) return;
+      
+      const card = button.closest('.user-card');
+      const userId = card.dataset.userid;
+      const tab = document.querySelector('.tab-button.active').dataset.tab;
+      const userName = card.querySelector('.display-name').textContent;
 
-  // “팔로잉(보라색)” 버튼 클릭 → 언팔로우
- if (button.classList.contains('following')) {
-	 if (!confirm(`${card.querySelector('.display-name').textContent}님을 언팔로우하시겠습니까?`)) {
-		    return;  // 사용자가 취소를 누르면 함수 종료
-		  }
-  fetch(`/api/follow/${userId}`, { method: 'DELETE' })
-    .then(res => {
-      if (!res.ok) throw new Error('언팔로우 실패');
-
-      // ● 먼저 버튼 상태 리셋
-      button.classList.remove('following');
-      button.classList.add('follow');
-      button.textContent = '팔로우';
-
-      // ● 그 다음 탭별 후속 처리
-      if (tab === 'following') {
-        card.remove();
-      } else {
-        const status = card.querySelector('.relationship-status');
-        if (tab === 'followers') {
-          status.textContent = '나를 팔로우';
-          status.style.display = 'inline-block';
-          status.classList.remove('mutual');
-        } else { // search 탭
-          status.style.display = 'none';
+      // "팔로잉(보라색)" 버튼 클릭 → 언팔로우
+      if (button.classList.contains('following')) {
+        if (!confirm(`${userName}님을 언팔로우하시겠습니까?`)) {
+          return;
         }
-      }
-    })
-    .catch(err => console.error(err));
-}
-  // “팔로우(흰색)” 버튼 클릭 → 팔로우
-  else {
-    fetch(`/api/follow/${userId}`, { method: 'POST' })
-      .then(res => {
-        if (!res.ok) throw new Error('팔로우 실패');
-        button.classList.remove('follow');
-        button.classList.add('following');
-        button.textContent = (tab === 'followers') ? '맞팔로우' : '팔로잉';
-
-        fetch(`/api/follow/mutual/${userId}`)
-          .then(r => r.json())
-          .then(isMutual => {
-            const status = card.querySelector('.relationship-status');
-            if (isMutual) {
-              status.textContent = '맞팔로우 중';
-              status.classList.add('mutual');
-              status.style.display = 'inline-block';
+        
+        fetch(`/api/follow/by-login/${userId}`, {
+          method: 'DELETE'
+        })
+        .then(response => {
+          if (response.ok) {
+            button.classList.remove('following');
+            button.classList.add('follow');
+            button.textContent = '팔로우';
+            
+            // ⭐️ 팔로잉 탭에서는 카드 제거
+            if (tab === 'following') {
+              card.remove();
             }
-          });
-      })
-      .catch(err => console.error(err));
-  }
-});
+            
+            // ⭐️ 팔로잉 목록 데이터 업데이트
+            updateFollowingData('remove', userId);
+            
+            console.log('언팔로우 성공');
+          } else {
+            alert('언팔로우에 실패했습니다.');
+          }
+        })
+        .catch(error => {
+          console.error('언팔로우 오류:', error);
+          alert('오류가 발생했습니다.');
+        });
+      }
+      // "팔로우(흰색)" 버튼 클릭 → 팔로우
+      else {
+        fetch(`/api/follow/by-login/${userId}`, {
+          method: 'POST'
+        })
+        .then(response => {
+          if (response.ok) {
+            button.classList.remove('follow');
+            button.classList.add('following');
+            button.textContent = (tab === 'followers') ? '맞팔로우' : '팔로잉';
+            
+            // ⭐️ 팔로잉 목록 데이터에 추가
+            const userInfo = {
+              loginId: userId,
+              nickname: userName,
+              bio: card.querySelector('.status-message').textContent,
+              privacy: card.querySelector('.privacy-badge') ? 'private' : 'public',
+              profileImg: card.querySelector('.profile-picture').src
+            };
+            updateFollowingData('add', userId, userInfo);
+            
+            console.log('팔로우 성공');
+          } else {
+            alert('팔로우에 실패했습니다.');
+          }
+        })
+        .catch(error => {
+          console.error('팔로우 오류:', error);
+          alert('오류가 발생했습니다.');
+        });
+      }
+    });
 
+    // 초기 로드
+    loadUsers('search');
   </script>
 </body>
 </html>

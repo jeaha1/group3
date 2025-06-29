@@ -7,25 +7,47 @@
 <body>
 <div class="main-container">
     <!-- 배경(커버) 이미지 -->
-    <div class="cover-bg"
-         th:style="'background-image:url(' + (${user.backgroundImg} != null ? @{${user.backgroundImg}} : @{/img/cover_default.jpg}) + ');'"></div>
+    <div class="cover-bg">
+        <img th:if="${user.backgroundImg != null}" th:src="@{${user.backgroundImg}}" alt="배경 이미지" style="width:100%; height:200px; object-fit:cover;">
+        <img th:if="${user.backgroundImg == null}" th:src="@{/img/cover_default.jpg}" alt="기본 배경" style="width:100%; height:200px; object-fit:cover;">
+    </div>
+    
     <div class="profile-section">
         <div class="profile-circle">
-            <img th:src="${user.profileImg} != null ? @{${user.profileImg}} : @{/img/profile_default.jpg}" alt="프로필 이미지">
+            <img th:if="${user.profileImg != null}" th:src="@{${user.profileImg}}" alt="프로필 이미지">
+            <img th:if="${user.profileImg == null}" th:src="@{/img/profile_default.jpg}" alt="기본 프로필">
         </div>
+        
         <div class="profile-info">
             <h2 th:text="${user.username}">닉네임</h2>
             <div class="profile-meta">
-                <span th:text="${user.followingCount} + ' 팔로잉'">0 팔로잉</span>
+                <!-- ⭐️ 실시간 팔로우 수 표시 -->
+                <span id="followingCount" th:text="${user.followingCount} + ' 팔로잉'">0 팔로잉</span>
                 &nbsp;|&nbsp;
-                <span th:text="${user.followerCount} + ' 팔로워'">0 팔로워</span>
+                <span id="followerCount" th:text="${user.followerCount} + ' 팔로워'">0 팔로워</span>
                 &nbsp;|&nbsp;
-                <span th:text="${#temporals.format(user.createdAt, 'yyyy년 M월 d일 가입')}">2025년 6월 10일 가입</span>
+                <!-- 가입일자를 년/월/일 형식으로 수정 -->
+                <span th:if="${user.createdAt != null}" th:text="${#temporals.format(user.createdAt, 'yyyy/MM/dd')} + ' 가입'">2025/06/30 가입</span>
+                <span th:if="${user.createdAt == null}">2025/06/30 가입</span>
+                &nbsp;|&nbsp;
+                <!-- 공개범위 표시 -->
+                <span th:if="${user.privacy == 'private'}">🔒비공개</span>
+                <span th:if="${user.privacy != 'private'}">🌍 전체공개</span>
             </div>
             <div class="profile-desc" th:text="${user.bio}">자기소개 텍스트</div>
         </div>
-        <button class="edit-btn" onclick="openModal()">프로필 수정</button>
+        
+        <!-- 본인 페이지일 때만 프로필 수정 버튼 표시 -->
+        <button th:if="${isOwner}" class="edit-btn" onclick="openModal()">프로필 수정</button>
+        
+        <!-- 다른 사람 페이지일 때 팔로우 버튼 표시 -->
+        <div th:if="${!isOwner}" class="follow-section">
+            <button class="follow-btn" id="followBtn" th:data-user-id="${user.loginId}" onclick="toggleFollow(this)">
+                팔로우
+            </button>
+        </div>
     </div>
+    
     <!-- 탭 메뉴 -->
     <div class="tab-menu">
         <button class="active" onclick="showTab('posts', this)">게시물</button>
@@ -33,45 +55,47 @@
         <button onclick="showTab('media', this)">미디어</button>
         <button onclick="showTab('likes', this)">마음에 들어요</button>
     </div>
+    
     <!-- 탭별 내용 -->
     <div id="tab-content">
-        <!-- 게시물 탭: 본인이 작성한 게시물 -->
+        <!-- 게시물 탭 -->
         <div id="posts" class="tab-pane">
             <div th:each="post : ${posts}" class="post-item">
                 <a th:href="@{/posts/{postId}(postId=${post.id})}" style="text-decoration:none;">
                     <!-- 이미지가 있는 경우 표시 -->
-                    <div th:if="${post.imagePath != null and post.imagePath != ''}" style="margin-bottom:12px;">
+                    <div th:if="${post.imagePath != null and post.imagePath != ''}">
                         <img th:src="@{${post.imagePath}}" alt="게시물 이미지" 
-                             style="width:100%; max-width:400px; height:auto; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                             style="width:100%; max-width:400px; height:auto; border-radius:8px; margin-bottom:12px;">
                     </div>
                     
                     <h4 th:text="${post.content}">게시물 내용</h4>
                     <p th:text="${post.content}">게시물 내용</p>
-                    <span th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+                    <!-- 게시물 작성일도 년/월/일 형식으로 수정 -->
+                    <span th:if="${post.createdAt != null}" th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd')}">2025/06/30</span>
                 </a>
             </div>
-            <div th:if="${#lists.isEmpty(posts)}">작성한 게시물이 없습니다.</div>
+            <div th:if="${posts == null or #lists.isEmpty(posts)}">작성한 게시물이 없습니다.</div>
         </div>
         
-        <!-- 답글 탭: 본인이 댓글을 단 게시물 -->
+        <!-- 답글 탭 -->
         <div id="replies" class="tab-pane" style="display:none;">
             <div th:each="reply : ${replyList}" class="reply-item">
                 <a th:href="@{/posts/{postId}(postId=${reply.id})}" style="text-decoration:none;">
-                    <!-- 이미지가 있는 경우 표시 -->
-                    <div th:if="${reply.imagePath != null and reply.imagePath != ''}" style="margin-bottom:12px;">
+                    <div th:if="${reply.imagePath != null and reply.imagePath != ''}">
                         <img th:src="@{${reply.imagePath}}" alt="게시물 이미지" 
-                             style="width:100%; max-width:400px; height:auto; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                             style="width:100%; max-width:400px; height:auto; border-radius:8px; margin-bottom:12px;">
                     </div>
                     
                     <h4 th:text="${reply.content}">게시물 내용</h4>
                     <p>댓글을 달았습니다</p>
-                    <span th:text="${#temporals.format(reply.createdAt, 'yyyy-MM-dd HH:mm')}">날짜</span>
+                    <!-- 댓글 날짜도 년/월/일 형식으로 수정 -->
+                    <span th:if="${reply.createdAt != null}" th:text="${#temporals.format(reply.createdAt, 'yyyy/MM/dd')}">2025/06/30</span>
                 </a>
             </div>
-            <div th:if="${#lists.isEmpty(replyList)}">댓글을 단 게시물이 없습니다.</div>
+            <div th:if="${replyList == null or #lists.isEmpty(replyList)}">댓글을 단 게시물이 없습니다.</div>
         </div>
         
-        <!-- 미디어 탭: 본인이 사진 첨부한 게시물의 사진들 -->
+        <!-- 미디어 탭 -->
         <div id="media" class="tab-pane" style="display:none;">
             <div class="media-grid">
                 <div th:each="media : ${mediaList}" class="media-item">
@@ -81,78 +105,235 @@
                     </a>
                 </div>
             </div>
-            <div th:if="${#lists.isEmpty(mediaList)}">업로드한 미디어가 없습니다.</div>
+            <div th:if="${mediaList == null or #lists.isEmpty(mediaList)}">업로드한 미디어가 없습니다.</div>
         </div>
         
-        <!-- 마음에 들어요 탭: 본인이 좋아요를 누른 게시물 -->
+        <!-- 마음에 들어요 탭 -->
         <div id="likes" class="tab-pane" style="display:none;">
             <div th:each="like : ${likePosts}" class="like-item">
                 <a th:href="@{/posts/{postId}(postId=${like.id})}" style="text-decoration:none;">
-                    <!-- 이미지가 있는 경우 표시 -->
-                    <div th:if="${like.imagePath != null and like.imagePath != ''}" style="margin-bottom:12px;">
+                    <div th:if="${like.imagePath != null and like.imagePath != ''}">
                         <img th:src="@{${like.imagePath}}" alt="게시물 이미지" 
-                             style="width:100%; max-width:400px; height:auto; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                             style="width:100%; max-width:400px; height:auto; border-radius:8px; margin-bottom:12px;">
                     </div>
                     
                     <h4 th:text="${like.content}">좋아요한 게시물 내용</h4>
                     <p th:text="${like.content}">게시물 내용</p>
-                    <span th:text="${#temporals.format(like.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+                    <!-- 좋아요 게시물 날짜도 년/월/일 형식으로 수정 -->
+                    <span th:if="${like.createdAt != null}" th:text="${#temporals.format(like.createdAt, 'yyyy/MM/dd')}">2025/06/30</span>
                 </a>
             </div>
-            <div th:if="${#lists.isEmpty(likePosts)}">좋아요한 게시물이 없습니다.</div>
+            <div th:if="${likePosts == null or #lists.isEmpty(likePosts)}">좋아요한 게시물이 없습니다.</div>
         </div>
     </div>
-    <!-- 프로필 수정 모달 -->
-    <div id="editModal">
+    
+    <!-- 본인 페이지일 때만 프로필 수정 모달 표시 -->
+    <div th:if="${isOwner}" id="editModal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <form th:action="@{/mypage/updateProfile}" method="post" enctype="multipart/form-data">
                 <div class="cover-edit">
-                    <img id="coverPreview"
-                         th:src="${user.backgroundImg} != null ? @{${user.backgroundImg}} : @{/img/cover_default.jpg}"
-                         alt="커버 이미지">
+                    <img id="coverPreview" th:if="${user.backgroundImg != null}" th:src="@{${user.backgroundImg}}" alt="커버 이미지">
+                    <img id="coverPreview" th:if="${user.backgroundImg == null}" th:src="@{/img/cover_default.jpg}" alt="기본 커버">
                     <label>
                         <input type="file" name="backgroundImg" accept="image/*" style="display:none;" onchange="previewCover(event)">
                         <span style="font-size:18px;">&#9998;</span>
                     </label>
                 </div>
+                
                 <div class="profile-edit">
                     <div class="profile-img-wrapper">
-                        <img id="profilePreview"
-                             th:src="${user.profileImg} != null ? @{${user.profileImg}} : @{/img/profile_default.jpg}"
-                             alt="프로필 이미지">
+                        <img id="profilePreview" th:if="${user.profileImg != null}" th:src="@{${user.profileImg}}" alt="프로필 이미지">
+                        <img id="profilePreview" th:if="${user.profileImg == null}" th:src="@{/img/profile_default.jpg}" alt="기본 프로필">
                         <button type="button" class="edit-profile-btn" onclick="document.getElementById('profileImgInput').click()">
                             &#9998;
                         </button>
                         <input type="file" id="profileImgInput" name="profileImg" accept="image/*" style="display:none;" onchange="previewProfile(event)">
                     </div>
                 </div>
+                
                 <h2 style="margin-bottom:18px;font-size:1.3rem;">프로필 수정</h2>
                 <label>닉네임</label>
                 <input type="text" name="username" th:value="${user.username}" maxlength="30" required>
                 <label>자기소개</label>
                 <textarea name="bio" rows="3" maxlength="300" th:text="${user.bio}"></textarea>
+                
+                <!-- 공개범위 설정 -->
                 <label>공개범위 설정</label>
                 <div class="custom-dropdown">
-                    <input type="hidden" name="privacy" id="privacyInput"
-                        th:value="${user.privacy != null ? user.privacy : 'public'}">
+                    <input type="hidden" name="privacy" id="privacyInput" th:value="${user.privacy != null ? user.privacy : 'public'}">
                     <div class="dropdown-selected" id="dropdownSelected" onclick="toggleDropdown()">
-                        <span id="dropdownLabel"
-                              th:text="${user.privacy == 'public' or user.privacy == null} ? '전체공개' : '비공개'">
-                            전체공개
-                        </span>
+                        <span id="dropdownLabel" th:if="${user.privacy == 'public' or user.privacy == null}">🌍 전체공개</span>
+                        <span id="dropdownLabel" th:if="${user.privacy == 'private'}">🔒비공개</span>
                         <span class="dropdown-arrow">&#9662;</span>
                     </div>
                     <div class="dropdown-options" id="dropdownOptions">
-                        <div class="dropdown-option" onclick="selectPrivacy('public', '전체공개')">전체공개</div>
-                        <div class="dropdown-option" onclick="selectPrivacy('private', '비공개')">비공개</div>
+                        <div class="dropdown-option" onclick="selectPrivacy('public', '🌍 전체공개')">🌍 전체공개</div>
+                        <div class="dropdown-option" onclick="selectPrivacy('private', '🔒비공개')">🔒비공개</div>
                     </div>
                 </div>
+                
                 <button type="submit" class="edit-btn" style="width:100%;margin-top:20px;">저장</button>
             </form>
         </div>
     </div>
 </div>
+
 <script th:src="@{/js/mypage.js}"></script>
+
+<script>
+// ⭐️ 팔로우 수 업데이트 함수
+function updateFollowCounts(followingCount, followerCount) {
+    document.getElementById('followingCount').textContent = followingCount + ' 팔로잉';
+    document.getElementById('followerCount').textContent = followerCount + ' 팔로워';
+}
+
+// ⭐️ 팔로우 기능 (팔로우 수 실시간 업데이트 추가)
+function toggleFollow(button) {
+    const userId = button.getAttribute('data-user-id');
+    const isFollowing = button.classList.contains('following');
+    
+    console.log('팔로우 토글:', userId, '현재 상태:', isFollowing ? '팔로잉' : '팔로우');
+    
+    if (isFollowing) {
+        if (!confirm('언팔로우하시겠습니까?')) {
+            return;
+        }
+        
+        fetch(`/api/follow/by-login/${userId}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            console.log('언팔로우 응답:', response.status);
+            if (response.ok) {
+                button.classList.remove('following');
+                button.textContent = '팔로우';
+                button.style.background = '#0a7cff';
+                button.style.color = '#fff';
+                
+                // ⭐️ 팔로우 수 업데이트
+                refreshFollowCounts(userId);
+                
+                console.log('언팔로우 성공');
+            } else {
+                console.error('언팔로우 실패:', response.status);
+                alert('언팔로우에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('언팔로우 오류:', error);
+            alert('오류가 발생했습니다.');
+        });
+    } else {
+        fetch(`/api/follow/by-login/${userId}`, {
+            method: 'POST'
+        })
+        .then(response => {
+            console.log('팔로우 응답:', response.status);
+            if (response.ok) {
+                button.classList.add('following');
+                button.textContent = '팔로잉';
+                button.style.background = '#6c757d';
+                button.style.color = '#fff';
+                
+                // ⭐️ 팔로우 수 업데이트
+                refreshFollowCounts(userId);
+                
+                console.log('팔로우 성공');
+            } else {
+                console.error('팔로우 실패:', response.status);
+                alert('팔로우에 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('팔로우 오류:', error);
+            alert('오류가 발생했습니다.');
+        });
+    }
+}
+
+// ⭐️ 팔로우 수 새로고침 함수
+function refreshFollowCounts(targetUserId) {
+    // 현재 페이지의 사용자 ID 가져오기
+    const currentPageUserId = window.location.pathname.split('/').pop();
+    
+    // 마이페이지 정보 새로고침
+    fetch(`/api/mypage/info/${currentPageUserId}`)
+        .then(response => response.json())
+        .then(data => {
+            updateFollowCounts(data.followingCount, data.followerCount);
+        })
+        .catch(error => {
+            console.log('팔로우 수 업데이트 실패:', error);
+        });
+}
+
+// ⭐️ 페이지 로드 시 팔로우 상태 확인
+document.addEventListener('DOMContentLoaded', function() {
+    const followBtn = document.getElementById('followBtn');
+    if (followBtn) {
+        const userId = followBtn.getAttribute('data-user-id');
+        console.log('팔로우 상태 확인 시도:', userId);
+        
+        fetch(`/api/follow/status-by-login/${userId}`)
+            .then(response => response.json())
+            .then(isFollowing => {
+                console.log('팔로우 상태:', isFollowing);
+                if (isFollowing) {
+                    followBtn.classList.add('following');
+                    followBtn.textContent = '팔로잉';
+                    followBtn.style.background = '#6c757d';
+                    followBtn.style.color = '#fff';
+                }
+            })
+            .catch(error => {
+                console.log('팔로우 상태 확인 실패:', error);
+            });
+    }
+});
+</script>
+
+<style>
+/* 팔로우 버튼 스타일 */
+.follow-section {
+    margin-left: 38px;
+}
+
+.follow-btn {
+    padding: 9px 26px;
+    background: #0a7cff;
+    color: #fff;
+    border: none;
+    border-radius: 22px;
+    font-size: 1.08rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.follow-btn:hover {
+    background: #005ecb;
+    transform: translateY(-1px);
+}
+
+.follow-btn.following {
+    background: #6c757d;
+}
+
+.follow-btn.following:hover {
+    background: #e74c3c;
+}
+
+/* ⭐️ 팔로우 수 스타일 개선 */
+.profile-meta span {
+    transition: all 0.3s ease;
+}
+
+#followingCount, #followerCount {
+    font-weight: 600;
+    color: #2c3e50;
+}
+</style>
+
 </body>
 </html>
