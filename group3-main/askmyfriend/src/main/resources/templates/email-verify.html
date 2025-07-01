@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 본인 인증</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .auth-container {
+            max-width: 450px;
+            width: 90%;
+            padding: 30px;
+            background-color: #ffffff;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+            text-align: center;
+        }
+        h1 {
+            font-size: 2em;
+            color: #1c1e21;
+            margin-bottom: 25px;
+        }
+        p {
+            color: #606770;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1c1e21;
+        }
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="email"], input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .button-inline {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .timer {
+            font-size: 0.9em;
+            color: #fa383e;
+            margin-top: 10px;
+            text-align: right;
+            display: block;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        .button-primary {
+            background-color: #1877f2;
+            color: white;
+        }
+        .button-primary:hover {
+            background-color: #166fe5;
+        }
+        .button-disabled {
+            background-color: #c9ccd0;
+            color: #a0a3a7;
+            cursor: not-allowed;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #606770;
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1>이메일 본인 인증</h1>
+        <p>비밀번호 찾기를 위해 이메일 주소를 인증해 주세요.</p>
+
+        <div class="input-group">
+            <label for="emailInput">이메일 주소</label>
+            <div class="input-with-button">
+                <input type="email" id="emailInput" placeholder="예: yourname@example.com">
+                <button type="button" class="button-inline button-primary" id="sendCodeBtn">인증번호 받기</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="authCode">인증번호</label>
+            <input type="text" id="authCode" placeholder="인증번호 6자리 입력" disabled>
+            <span class="timer" id="timerText" style="display: none;">남은 시간: 10:00</span>
+        </div>
+
+        <button type="button" class="button button-primary button-disabled" id="verifyButton" disabled>인증 확인</button>
+
+        <a href="/auth/login" class="back-link">이전으로 돌아가기</a>
+    </div>
+
+    <script>
+        const emailInput = document.getElementById('emailInput');
+        const sendCodeBtn = document.getElementById('sendCodeBtn');
+        const authCodeInput = document.getElementById('authCode');
+        const verifyButton = document.getElementById('verifyButton');
+        const timerText = document.getElementById('timerText');
+
+        let countdown;
+        let timeLeft = 600; // 10분 (초)
+
+        sendCodeBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email.includes('@')) {
+                alert("올바른 이메일을 입력해주세요.");
+                return;
+            }
+
+            try {
+                const res = await fetch('/auth/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ email })
+                });
+
+                if (res.ok) {
+                    alert(`${email} 으로 인증번호를 전송했습니다.`);
+                    authCodeInput.removeAttribute('disabled');
+                    timerText.style.display = 'block';
+                    startTimer();
+                } else {
+                    alert('인증번호 전송 실패');
+                }
+            } catch (err) {
+                alert('오류 발생: ' + err.message);
+            }
+        });
+
+        authCodeInput.addEventListener('input', () => {
+            if (authCodeInput.value.length === 6) {
+                verifyButton.classList.remove('button-disabled');
+                verifyButton.removeAttribute('disabled');
+            } else {
+                verifyButton.classList.add('button-disabled');
+                verifyButton.setAttribute('disabled', true);
+            }
+        });
+
+        verifyButton.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            const code = authCodeInput.value.trim();
+
+            try {
+                const res = await fetch('/auth/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ email, code })
+                });
+
+                const result = await res.json();
+                if (result === true) {
+                    alert("✅ 인증 성공! 비밀번호 재설정 화면으로 이동합니다.");
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirect = urlParams.get('redirect') || '/auth/reset-password';
+
+                    window.location.href = `${redirect}?email=${encodeURIComponent(email)}`;
+                } else {
+                    alert("❌ 인증 실패. 인증번호를 다시 확인해 주세요.");
+                }
+            } catch (err) {
+                alert('오류 발생: ' + err.message);
+            }
+        });
+
+        function startTimer() {
+            clearInterval(countdown);
+            timeLeft = 600;
+
+            countdown = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerText.textContent = `남은 시간: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timerText.textContent = '⏰ 인증 시간이 만료되었습니다.';
+                    authCodeInput.setAttribute('disabled', true);
+                    verifyButton.classList.add('button-disabled');
+                    verifyButton.setAttribute('disabled', true);
+                }
+
+                timeLeft--;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,7 +46,7 @@
       font-size: 1.1em;
     }
     main {
-      max-width: 480px;
+      max-width: 600px;
       margin: 40px auto;
       background: var(--main-bg);
       border-radius: 18px;
@@ -88,6 +88,7 @@
       background: var(--bg-color);
       margin-top: 40px;
     }
+    /* 모달 중앙 정렬 */
     .modal {
       display: none;
       position: fixed;
@@ -95,6 +96,7 @@
       left: 0; top: 0;
       width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.4);
+      display: flex;
       justify-content: center;
       align-items: center;
     }
@@ -105,7 +107,6 @@
       width: 400px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       position: relative;
-      animation: fadeIn 0.25s ease;
       color: #000;
     }
     .close {
@@ -116,10 +117,6 @@
       font-weight: bold;
       color: #333;
       cursor: pointer;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
     }
     .theme-toggle-button {
       display: inline-block;
@@ -151,9 +148,9 @@
       <li data-type="account"><span class="icon">🛡️</span>개인정보 변경</li>
       <li data-type="profile"><span class="icon">🔒</span>프로필 공개 범위 설정</li>
       <li data-type="block"><span class="icon">🚫</span>차단 사용자 관리</li>
-      <li data-type="theme"><span class="icon">🌙</span>다크모드 / 라이트모드 전환</li>
-      <li data-type="language"><span class="icon">🌐</span>언어 설정 (선택)</li>
-      <li data-type="inquiry"><span class="icon">📮</span>1:1 문의</li>
+      <li data-type="them	e"><span class="icon">🌙</span>다크모드 / 라이트모드 전환</li>
+      <li onclick="location.href='/inquiry/form'"><span class="icon">📮</span>1:1 문의하기</li>
+      <li onclick="location.href='/inquiry/list'"><span class="icon">📄</span>내 문의 내역</li>
       <li data-type="withdraw"><span class="icon">❌</span>계정 탈퇴</li>
     </ul>
   </main>
@@ -174,6 +171,7 @@
     const modalBody = document.getElementById('modalBody');
     const closeBtn = document.querySelector('.close');
 
+    // 모달로 띄울 항목만 data-type 속성 있음
     document.querySelectorAll('.settings-list li[data-type]').forEach(item => {
       item.addEventListener('click', () => {
         const type = item.dataset.type;

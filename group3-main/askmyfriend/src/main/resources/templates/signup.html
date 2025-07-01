@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입 - SNS 서비스</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .signup-container {
+            max-width: 450px;
+            width: 90%;
+            padding: 30px;
+            background-color: #ffffff;
+            border: 1px solid #dddfe2;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1), 0 8px 16px rgba(0, 0, 0, .1);
+            text-align: left;
+        }
+        .signup-header h1 {
+            font-size: 2em;
+            color: #1c1e21;
+            margin-bottom: 5px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1c1e21;
+            font-size: 1em;
+        }
+        .input-group input {
+            width: calc(100% - 22px);
+            padding: 12px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+        }
+        .input-with-button input {
+            flex-grow: 1;
+        }
+        .button-inline {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            background-color: #1877f2;
+            color: white;
+            cursor: pointer;
+        }
+        .agreement-group {
+            margin-bottom: 20px;
+        }
+        .agreement-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .agreement-item input {
+            margin-right: 10px;
+        }
+        .agreement-item a {
+            color: #1877f2;
+            text-decoration: none;
+            margin-left: 5px;
+        }
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            background-color: #1877f2;
+            color: white;
+            box-sizing: border-box;
+        }
+        .login-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .login-link a {
+            color: #1877f2;
+            text-decoration: none;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="signup-header">
+            <h1>새 계정 만들기</h1>
+            <p>빠르고 쉽게 가입할 수 있습니다.</p>
+        </div>
+
+        <form method="post" action="/auth/signup">
+            <div class="input-group">
+                <label for="username">ID</label>
+<input type="text" id="loginId" name="loginId" placeholder="아이디를 입력하세요" required>
+            </div>
+            <div class="input-group">
+                <label for="email">이메일</label>
+                <input type="email" id="email" name="email" placeholder="이메일 주소를 입력하세요" required>
+            </div>
+            <div class="input-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+            </div>
+            <div class="input-group">
+                <label for="passwordConfirm">비밀번호 확인</label>
+                <input type="password" id="passwordConfirm" name="passwordConfirm" placeholder="비밀번호를 다시 입력하세요" required>
+            </div>
+            <div class="input-group">
+    <label for="userName">이름</label>
+    <input type="text" id="userName" name="userName" placeholder="이름을 입력하세요" required>
+</div>
+            <div class="input-group">
+                <label for="nickname">닉네임</label>
+                <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력하세요" required>
+            </div>
+            <div class="input-group">
+                <label for="signup-phone">휴대폰 번호 (선택)</label>
+                <div class="input-with-button">
+                    <input type="tel" id="signup-phone" name="phone" placeholder="예: 010-1234-5678" pattern="[0-9]{3}-?[0-9]{4}-?[0-9]{4}">
+                    <button type="button" class="button-inline" id="getPhoneCodeButton">인증번호 받기</button>
+                </div>
+            </div>
+            <div class="input-group" id="phoneAuthCodeGroup" style="display: none;">
+                <label for="signup-phone-auth-code">인증번호</label>
+                <input type="text" id="signup-phone-auth-code" name="phoneAuthCode" placeholder="인증번호 6자리 입력">
+            </div>
+
+            <div class="agreement-group">
+                <div class="agreement-item">
+                    <input type="checkbox" id="agree-terms" required>
+                    <label for="agree-terms"><span style="color: red;">(필수)</span> 이용약관 동의</label>
+                </div>
+                <div class="agreement-item">
+                    <input type="checkbox" id="agree-privacy" required>
+                    <label for="agree-privacy"><span style="color: red;">(필수)</span> 개인정보 수집 및 이용 동의</label>
+                </div>
+                <div class="agreement-item">
+                    <input type="checkbox" id="agree-marketing">
+                    <label for="agree-marketing">(선택) 마케팅 정보 수신 동의</label>
+                </div>
+            </div>
+
+            <button type="submit" class="button">가입하기</button>
+        </form>
+
+        <div class="login-link">
+            <a href="/auth/login">이미 계정이 있으신가요?</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("getPhoneCodeButton").addEventListener("click", () => {
+            const phoneInput = document.getElementById("signup-phone").value;
+            if (!phoneInput) {
+                alert("휴대폰 번호를 입력해주세요.");
+                return;
+            }
+            alert(`${phoneInput} (으)로 인증번호를 전송했습니다.`);
+            document.getElementById("phoneAuthCodeGroup").style.display = "block";
+        });
+    </script>
+</body>
+</html>

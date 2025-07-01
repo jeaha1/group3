@@ -4,6 +4,7 @@ import com.group3.askmyfriend.dto.UserSummaryDTO;
 import com.group3.askmyfriend.entity.UserEntity;
 import com.group3.askmyfriend.repository.UserRepository;
 import com.group3.askmyfriend.service.FollowService;
+import com.group3.askmyfriend.service.UserService;
 import com.group3.askmyfriend.service.CustomUserDetailsService.CustomUser;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/follow")
@@ -22,6 +26,9 @@ public class FollowController {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserService userService;
 
     // ✅ 팔로우 요청 (기존)
     @PostMapping("/{targetUserId}")
@@ -133,6 +140,37 @@ public class FollowController {
     public ResponseEntity<List<UserSummaryDTO>> getFollowers(@AuthenticationPrincipal CustomUser user) {
         List<UserSummaryDTO> list = followService.getFollowers(user);
         return ResponseEntity.ok(list);
+    }
+
+    // ⭐️ 친구 목록용 사용자 검색 API 추가
+    @GetMapping("/search")
+    public ResponseEntity<List<UserEntity>> searchUsers(@RequestParam String query, Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+        
+        try {
+            System.out.println("=== 사용자 검색 ===");
+            System.out.println("검색어: " + query);
+            System.out.println("현재 사용자: " + principal.getName());
+            
+            List<UserEntity> searchResults = userRepository.findByNicknameContainingIgnoreCase(query);
+            String currentLoginId = principal.getName();
+            
+            // 본인 제외하고 최대 10명 반환
+            List<UserEntity> filteredResults = searchResults.stream()
+                .filter(user -> !user.getLoginId().equals(currentLoginId))
+                .limit(10)
+                .collect(Collectors.toList());
+                
+            System.out.println("검색 결과: " + filteredResults.size() + "명");
+            return ResponseEntity.ok(filteredResults);
+            
+        } catch (Exception e) {
+            System.err.println("사용자 검색 오류: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
+        }
     }
 
     // ✅ 특정 유저와 맞팔 여부 확인 - 기존

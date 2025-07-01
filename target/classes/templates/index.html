@@ -53,6 +53,10 @@
       font-size: 16px;
       cursor: pointer;
     }
+    .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+    }
     
     /* 설정 아래 구분선 - 간격 대폭 축소 */
     .sidebar ul li:last-child {
@@ -197,6 +201,50 @@
       font-size: 48px;
       display: block;
       margin-bottom: 12px;
+    }
+
+    /* 작성자 정보 헤더 스타일 */
+    .author-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .author-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+
+    .author-header .default-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #ddd;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-weight: bold;
+    }
+
+    .author-header .author-info {
+      flex: 1;
+    }
+
+    .author-header .author-name {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .author-header .author-bio {
+      font-size: 12px;
+      color: #666;
     }
 
     /* 게시물 스타일 - 상단 부분 */
@@ -379,6 +427,20 @@
       color: #aaa;
     }
 
+    /* 다크모드 작성자 헤더 */
+    body.dark .author-header {
+      border-bottom: 1px solid #404040;
+    }
+
+    body.dark .author-header .default-avatar {
+      background: #404040;
+      color: #ccc;
+    }
+
+    body.dark .author-header .author-bio {
+      color: #aaa;
+    }
+
     /* 다크모드 게시물 및 댓글 */
     body.dark .content-section > div {
       background: #2a2d31 !important;
@@ -424,25 +486,25 @@
 <div class="sidebar">
   <div class="logo">Daily Log</div>
   <div class="user">
-    <img src="#" alt="User" />
+    <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}" alt="User" />
     <div>
-      <div>사용자명</div>
-      <div style="font-size:13px; color:#888;">email@example.com</div>
+      <div th:text="${user != null ? user.nickname : '사용자명'}">사용자명</div>
     </div>
   </div>
   <ul>
-     <li onclick="location.href='/'">홈</li>
-     <li onclick="location.href='/alarm'">알람</li>
-     <li onclick="location.href='/friend-management'">친구 관리</li> <!-- ⭐️ 수정된 부분 -->
-     <li onclick="location.href='/chat'">채팅</li>
-     <li onclick="location.href='/live'">숏폼</li>
-     <li><a href="/mypage">내 프로필</a></li>
-     <li onclick="location.href='/setting'">설정</li>
+    <li><a th:href="@{/}">홈</a></li>
+    <li><a th:href="@{/posts}">글 목록</a></li>
+    <li><a th:href="@{/notifications}">알림</a></li>
+    <li><a th:href="@{/friends}">친구 목록</a></li>
+    <li><a th:href="@{/chat}">채팅</a></li>
+    <li><a th:href="@{/shorts}">숏폼</a></li>
+    <li><a th:href="@{/subscriptions}">구독 관리</a></li>
+    <li><a th:href="@{/mypage}">내 프로필</a></li>
+    <li><a th:href="@{/setting}">설정</a></li>
   </ul>
-  <a href="/posts/new" class="new-post">새 글 쓰기</a>
-    <div class="logout">로그아웃</div>
-      <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
-    
+  <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
+  <div class="logout" onclick="location.href='/logout'">로그아웃</div>
+  <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
 </div>
 
 <div class="search-page-container">
@@ -469,9 +531,34 @@
       <div th:if="${posts != null and !#lists.isEmpty(posts)}">
         <div th:each="post : ${posts}" class="content-section">
           <div>
+            <!-- 작성자 정보 헤더 -->
+            <div class="author-header" th:if="${post.authorNickname != null}">
+              <img th:if="${post.authorProfileImg}" 
+                   th:src="@{${post.authorProfileImg}}" 
+                   alt="프로필 이미지">
+              <div th:if="${!post.authorProfileImg}" 
+                   class="default-avatar"
+                   th:text="${post.authorNickname != null ? #strings.substring(post.authorNickname, 0, 1) : '?'}">?</div>
+              <div class="author-info">
+                <div class="author-name" th:text="${post.authorNickname ?: '익명'}">닉네임</div>
+                <div th:if="${post.authorBio}" class="author-bio" th:text="${post.authorBio}">소개</div>
+              </div>
+            </div>
+            
+            <!-- 게시글 내용 -->
             <p th:text="${post.content}" style="font-size: 14px; margin-bottom: 10px;">내용</p>
+            
             <img th:if="${post.imagePath != null}" th:src="@{${post.imagePath}}"
                  style="max-width: 400px; height: auto; display: block; margin: 0 auto 10px;">
+                 
+            <!-- 비디오 블록 -->
+            <div th:if="${post.videoPath}">
+              <video width="400" controls style="display: block; margin: 0 auto 10px;">
+                <source th:src="@{${post.videoPath}}" type="video/mp4" />
+                이 브라우저는 video 태그를 지원하지 않습니다.
+              </video>
+            </div>
+            
             <p style="color: #999;" th:text="'공개범위: ' + ${post.visibility}">공개범위</p>
             
             <div class="interaction-buttons">

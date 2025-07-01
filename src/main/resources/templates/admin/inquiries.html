@@ -9,56 +9,114 @@
     }
 
     body {
-      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      font-family: 'Noto Sans KR', sans-serif;
       margin: 0;
-      display: flex;
-      min-height: 100vh;
-      background-color: #f5f6f7;
+      padding: 0;
     }
 
     .admin-layout {
       display: flex;
-      width: 100%;
+      min-height: 100vh;
+      gap: 4px;
     }
 
+    /* 사이드바 스타일 */
     .sidebar {
       width: 200px;
-      background-color: #1e1e1e;
+      background: #232323;
       color: #fff;
-      padding-top: 30px;
+      border-radius: 0 0 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 32px 0 24px 0;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.07);
       min-height: 100vh;
+      flex-shrink: 0; /* 사이드바 크기 고정 */
     }
 
-    .sidebar h2 {
-      text-align: center;
+    .sidebar-title {
       font-size: 20px;
-      margin-bottom: 30px;
+      font-weight: bold;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
     }
 
-    .sidebar a {
-      display: block;
+    .sidebar-menu {
+      width: 100%;
+      flex: 1;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 0 12px 32px;
+      font-size: 16px;
       color: #fff;
-      padding: 14px 24px;
       text-decoration: none;
-      transition: background 0.2s;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s;
     }
 
-    .sidebar a:hover, .sidebar a.active {
-      background-color: #333;
+    .sidebar-link.active,
+    .sidebar-link:hover {
+      background: #30333a;
       color: #4fc3f7;
+      border-left: 4px solid #4fc3f7;
     }
 
+    .sidebar-link.logout {
+      color: #ff6666;
+      margin-top: 32px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-link.logout:hover {
+      background: #3a2323;
+      color: #ff8888;
+      border-left: 4px solid #ff8888;
+    }
+
+    .sidebar-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+
+    /* 메인 컨테이너 스타일 - 가로 폭 확장 */
     .admin-container {
       flex: 1;
-      padding: 40px;
+      max-width: none; /* 최대 폭 제한 제거 */
+      width: 100%; /* 전체 폭 사용 */
+      margin: 40px 20px; /* 좌우 여백 조정 */
+      padding: 24px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
 
     h1 {
       margin-bottom: 30px;
+      color: #232323;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    /* 테이블 컨테이너 추가 */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
     }
 
     table {
       width: 100%;
+      min-width: 1200px; /* 최소 폭 설정 */
       border-collapse: collapse;
       background: #fff;
       border-radius: 10px;
@@ -71,11 +129,23 @@
       border-bottom: 1px solid #eee;
       text-align: left;
       vertical-align: top;
+      word-wrap: break-word;
     }
 
     th {
       background-color: #f0f2f5;
+      font-weight: bold;
+      color: #232323;
+      white-space: nowrap; /* 헤더 텍스트 줄바꿈 방지 */
     }
+
+    /* 컬럼별 너비 조정 */
+    th:nth-child(1), td:nth-child(1) { width: 8%; } /* 사용자 ID */
+    th:nth-child(2), td:nth-child(2) { width: 20%; } /* 제목 */
+    th:nth-child(3), td:nth-child(3) { width: 30%; } /* 내용 */
+    th:nth-child(4), td:nth-child(4) { width: 10%; } /* 상태 */
+    th:nth-child(5), td:nth-child(5) { width: 12%; } /* 작성일 */
+    th:nth-child(6), td:nth-child(6) { width: 20%; } /* 답변 */
 
     .reply-form textarea {
       width: 100%;
@@ -83,29 +153,40 @@
       padding: 8px;
       font-size: 0.95em;
       margin-bottom: 6px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      resize: vertical;
+      min-width: 200px; /* 최소 폭 설정 */
     }
 
     .reply-form button {
-      background-color: #1877f2;
+      background-color: #232323;
       color: white;
       padding: 8px 12px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: bold;
+      transition: background 0.2s;
+      white-space: nowrap;
     }
 
     .reply-form button:hover {
-      background-color: #145fca;
+      background-color: #444;
     }
 
     .status-tag {
       font-weight: bold;
       color: #fa383e;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      white-space: nowrap;
     }
 
     .status-tag.answered {
       color: #2e8b57;
+      background-color: #e8f5e8;
     }
 
     .reply-view {
@@ -114,63 +195,190 @@
       border-radius: 6px;
       color: #333;
       font-size: 0.95em;
+      border-left: 4px solid #4fc3f7;
+      min-width: 200px;
+      word-wrap: break-word;
+    }
+
+    /* 내용 셀 스타일 개선 */
+    .content-cell {
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .content-cell:hover {
+      white-space: normal;
+      overflow: visible;
+    }
+
+    /* 반응형 디자인 */
+    @media (max-width: 1400px) {
+      .admin-container { 
+        margin: 20px 10px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .admin-container { 
+        margin: 20px 5px;
+      }
+      
+      table {
+        min-width: 1000px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .admin-layout { 
+        flex-direction: column; 
+      }
+      
+      .sidebar { 
+        flex-direction: row; 
+        width: 100%; 
+        min-height: unset; 
+        border-radius: 0 0 18px 18px; 
+        padding: 16px 0;
+      }
+      
+      .sidebar-title {
+        margin-bottom: 0;
+        margin-right: 20px;
+        font-size: 18px;
+      }
+      
+      .sidebar-menu { 
+        display: flex; 
+        flex-direction: row; 
+        gap: 8px;
+      }
+      
+      .sidebar-link { 
+        padding: 12px 16px; 
+        font-size: 15px; 
+        border-left: none; 
+        border-bottom: 4px solid transparent; 
+        white-space: nowrap;
+      }
+      
+      .sidebar-link.active, 
+      .sidebar-link:hover { 
+        border-left: none; 
+        border-bottom: 4px solid #4fc3f7; 
+      }
+      
+      .sidebar-link.logout { 
+        margin-top: 0; 
+      }
+
+      .admin-container {
+        margin: 10px;
+        padding: 16px;
+      }
+
+      table {
+        font-size: 0.9em;
+        min-width: 800px;
+      }
+
+      th, td {
+        padding: 12px 8px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar-menu {
+        flex-wrap: wrap;
+      }
+      
+      .sidebar-link {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      
+      .sidebar-icon {
+        font-size: 16px;
+        width: 18px;
+      }
+
+      table {
+        min-width: 700px;
+      }
     }
   </style>
 </head>
 <body>
 <div class="admin-layout">
 
-  <!-- ✅ 사이드바 -->
+  <!-- 사이드바 -->
   <nav class="sidebar">
-    <h2>관리자</h2>
-    <a href="/admin/dashboard">📊 대시보드</a>
-    <a href="/admin/members">👥 회원 관리</a>
-    <a href="/admin/reports">🚩 신고 관리</a>
-    <a href="/admin/inquiries" class="active">💬 1:1 문의 관리</a>
-    <a href="/admin/chatlog">💬 채팅 로그 보기</a>
-    <a href="/admin/systemlog">📝 시스템 로그</a>
-    <a href="/admin/logout" style="color: #ff6666">📕 로그아웃</a>
+    <div class="sidebar-title">관리자</div>
+    <div class="sidebar-menu">
+      <a class="sidebar-link" href="/admin/dashboard">
+        <span class="sidebar-icon">📊</span>대시보드
+      </a>
+      <a class="sidebar-link" href="/admin/members">
+        <span class="sidebar-icon">👥</span>회원 관리
+      </a>
+      <a class="sidebar-link" href="/admin/reports">
+        <span class="sidebar-icon">🚩</span>신고 관리
+      </a>
+      <a class="sidebar-link active" href="/admin/inquiries">
+        <span class="sidebar-icon">💬</span>1:1 문의 관리
+      </a>
+      <a class="sidebar-link" href="/admin/chatlog">
+        <span class="sidebar-icon">💬</span>채팅 로그 보기
+      </a>
+      <a class="sidebar-link logout" href="/admin/logout">
+        <span class="sidebar-icon">📕</span>로그아웃
+      </a>
+    </div>
   </nav>
 
-  <!-- ✅ 본문 영역 -->
+  <!-- 본문 영역 -->
   <div class="admin-container">
     <h1>1:1 문의 관리</h1>
-    <table>
-      <thead>
-      <tr>
-        <th>사용자 ID</th>
-        <th>제목</th>
-        <th>내용</th>
-        <th>상태</th>
-        <th>작성일</th>
-        <th>답변</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="inquiry : ${inquiries}">
-        <td th:text="${inquiry.userId}">1</td>
-        <td th:text="${inquiry.title}">제목</td>
-        <td th:text="${inquiry.content}">내용</td>
-        <td>
-          <span th:classappend="${inquiry.status == '답변완료'} ? 'status-tag answered' : 'status-tag'"
-                th:text="${inquiry.status}">상태</span>
-        </td>
-        <td th:text="${#temporals.format(inquiry.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</td>
-        <td>
-          <!-- ✅ 답변완료 상태일 경우 텍스트만 -->
-          <div th:if="${inquiry.status == '답변완료'}" class="reply-view" th:text="${inquiry.reply}">답변 내용</div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+        <tr>
+          <th>사용자 ID</th>
+          <th>제목</th>
+          <th>내용</th>
+          <th>상태</th>
+          <th>작성일</th>
+          <th>답변</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="inquiry : ${inquiries}">
+          <td th:text="${inquiry.userId}">1</td>
+          <td th:text="${inquiry.title}">제목</td>
+          <td class="content-cell" th:text="${inquiry.content}" th:title="${inquiry.content}">내용</td>
+          <td>
+            <span th:classappend="${inquiry.status == '답변완료'} ? 'status-tag answered' : 'status-tag'"
+                  th:text="${inquiry.status}">상태</span>
+          </td>
+          <td th:text="${#temporals.format(inquiry.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</td>
+          <td>
+            <!-- 답변완료 상태일 경우 텍스트만 -->
+            <div th:if="${inquiry.status == '답변완료'}" class="reply-view" th:text="${inquiry.reply}">답변 내용</div>
 
-          <!-- ✅ 미답변 상태일 경우 답변 입력 폼 -->
-          <form th:if="${inquiry.status != '답변완료'}"
-                th:action="@{/admin/inquiries/{id}/reply(id=${inquiry.id})}"
-                method="post" class="reply-form">
-            <textarea name="reply" placeholder="답변 입력"></textarea>
-            <button type="submit">답변 저장</button>
-          </form>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+            <!-- 미답변 상태일 경우 답변 입력 폼 -->
+            <form th:if="${inquiry.status != '답변완료'}"
+                  th:action="@{/admin/inquiries/{id}/reply(id=${inquiry.id})}"
+                  method="post" class="reply-form">
+              <textarea name="reply" placeholder="답변 입력"></textarea>
+              <button type="submit">답변 저장</button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 </body>

@@ -210,10 +210,10 @@
     const userListArea = document.getElementById('user-list');
     const searchInput = document.getElementById('user-search');
 
-    // ⭐️ 프로필 클릭 시 마이페이지로 이동하는 함수
-    function goToUserPage(userId) {
-      console.log('사용자 페이지로 이동:', userId);
-      window.location.href = `/mypage/user/${userId}`;
+    // ⭐️ 프로필 클릭 시 친구 페이지로 이동하는 함수
+    function goToUserPage(loginId) {
+      console.log('사용자 페이지로 이동:', loginId);
+      window.location.href = `/friend-management/profile/${loginId}`;
     }
 
     tabs.forEach(tab => {
@@ -225,38 +225,61 @@
     });
 
     function loadUsers(tabType) {
+      console.log('탭 로드:', tabType);
+      
       if (tabType === "search") {
         userListArea.innerHTML = '<div class="empty-list-message">검색어를 입력하세요</div>';
         return;
       }
       
-      // 서버에서 받은 데이터 사용
-      const dataDiv = document.getElementById(tabType + '-data');
-      const userDataElements = dataDiv.querySelectorAll('.user-data');
-      
-      const users = Array.from(userDataElements).map(el => ({
-        userId: el.getAttribute('data-userid'),
-        loginId: el.getAttribute('data-userid'),
-        nickname: el.getAttribute('data-nickname'),
-        bio: el.getAttribute('data-bio'),
-        privacy: el.getAttribute('data-privacy'),
-        profileImg: el.getAttribute('data-profile')
-      }));
-      
-      renderUserList(users, tabType);
+      // ⭐️ API를 통해 실시간 데이터 가져오기
+      const endpoint = tabType === "followers" 
+        ? "/api/follow/followers" 
+        : "/api/follow/following";
+        
+      console.log('API 호출:', endpoint);
+        
+      fetch(endpoint)
+        .then(res => {
+          console.log('응답 상태:', res.status);
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(users => {
+          console.log('받은 데이터:', users);
+          
+          // ⭐️ UserSummaryDTO 구조에 맞게 변환
+          const convertedUsers = users.map(user => ({
+            loginId: user.loginId || user.userId,
+            nickname: user.nickname || user.displayName,
+            bio: user.bio || user.statusMessage || '',
+            privacy: user.privacy || 'public',
+            profileImg: user.profileImg || user.profileImage
+          }));
+          
+          renderUserList(convertedUsers, tabType);
+        })
+        .catch(error => {
+          console.error('API 오류:', error);
+          userListArea.innerHTML = '<div class="empty-list-message">데이터를 불러오는 데 실패했습니다.</div>';
+        });
     }
 
     function renderUserList(users, tabType) {
+      console.log('렌더링 시작:', users.length, '명');
+      
       userListArea.innerHTML = "";
       if (users.length === 0) {
-        userListArea.innerHTML = '<div class="empty-list-message"><p>이 목록에는 아직 사용자가 없습니다.</p></div>';
+        const message = tabType === 'following' ? '팔로잉한 사용자가 없습니다.' : '팔로워가 없습니다.';
+        userListArea.innerHTML = `<div class="empty-list-message"><p>${message}</p></div>`;
         return;
       }
 
       users.forEach(user => {
         const card = document.createElement('div');
         card.className = 'user-card';
-        // ⭐️ 중요: loginId를 문자열로 설정
         card.dataset.userid = user.loginId;
 
         // 기본 라벨/클래스
@@ -266,7 +289,6 @@
         const defaultClass = (tabType === 'search' || tabType === 'followers') 
                             ? 'follow' : 'following';
 
-        // ⭐️ 수정된 부분: loginId 사용 확실히 하기
         card.innerHTML = `
           <img src="${user.profileImg || '/img/profile_default.jpg'}" 
                class="profile-picture" 
@@ -283,47 +305,56 @@
           </div>`;
         
         userListArea.appendChild(card);
-      });
-    }
-
-    // ⭐️ 팔로잉 데이터 실시간 업데이트 함수
-    function updateFollowingData(action, userId, userInfo = null) {
-      const followingDataDiv = document.getElementById('following-data');
-      
-      if (action === 'add' && userInfo) {
-        // 새로운 사용자 데이터 추가
-        const newUserData = document.createElement('div');
-        newUserData.className = 'user-data';
-        newUserData.setAttribute('data-userid', userInfo.loginId);
-        newUserData.setAttribute('data-nickname', userInfo.nickname);
-        newUserData.setAttribute('data-bio', userInfo.bio);
-        newUserData.setAttribute('data-privacy', userInfo.privacy);
-        newUserData.setAttribute('data-profile', userInfo.profileImg);
         
-        followingDataDiv.appendChild(newUserData);
-        console.log('팔로잉 데이터에 추가:', userInfo.nickname);
+        // ⭐️ 팔로우 상태 확인 및 버튼 업데이트
+        const btn = card.querySelector('button.action-button');
+        const status = card.querySelector('.relationship-status');
         
-      } else if (action === 'remove') {
-        // 기존 사용자 데이터 제거
-        const existingData = followingDataDiv.querySelector(`[data-userid="${userId}"]`);
-        if (existingData) {
-          existingData.remove();
-          console.log('팔로잉 데이터에서 제거:', userId);
+        if (tabType === 'search') {
+          // 검색 탭: 실제 팔로잉 여부 체크
+          fetch(`/api/follow/status-by-login/${user.loginId}`)
+            .then(res => res.json())
+            .then(isFollowing => {
+              if (isFollowing) {
+                btn.classList.remove('follow');
+                btn.classList.add('following');
+                btn.textContent = '팔로잉';
+              }
+            })
+            .catch(error => console.log('팔로우 상태 확인 실패:', error));
         }
-      }
+      });
+      
+      console.log('렌더링 완료');
     }
 
-    // ⭐️ 검색 입력 시
+    // ⭐️ 검색 기능 수정
     searchInput.addEventListener("input", function(e) {
       const query = e.target.value.trim();
       if (document.querySelector(".tab-button.active").dataset.tab !== "search") return;
+      
       if (query.length > 0) {
         console.log('검색 시도:', query);
-        fetch(`/friend-management/search?keyword=${encodeURIComponent(query)}`)
-          .then(res => res.json())
+        fetch(`/api/follow/search?query=${encodeURIComponent(query)}`)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+          })
           .then(users => {
             console.log('검색 결과:', users);
-            renderUserList(users, "search");
+            
+            // ⭐️ UserEntity 구조에 맞게 변환
+            const convertedUsers = users.map(user => ({
+              loginId: user.loginId,
+              nickname: user.nickname,
+              bio: user.bio || '',
+              privacy: user.privacy || 'public',
+              profileImg: user.profileImg
+            }));
+            
+            renderUserList(convertedUsers, "search");
           })
           .catch((error) => {
             console.error('검색 오류:', error);
@@ -334,15 +365,21 @@
       }
     });
 
-    // ⭐️ 팔로우/언팔로우 버튼 클릭 (실시간 업데이트 추가)
+    // ⭐️ 팔로우/언팔로우 버튼 클릭
     userListArea.addEventListener('click', e => {
       const button = e.target.closest('.action-button');
       if (!button) return;
+      
+      // 이벤트 전파 방지
+      e.preventDefault();
+      e.stopPropagation();
       
       const card = button.closest('.user-card');
       const userId = card.dataset.userid;
       const tab = document.querySelector('.tab-button.active').dataset.tab;
       const userName = card.querySelector('.display-name').textContent;
+
+      console.log('버튼 클릭:', userId, '탭:', tab);
 
       // "팔로잉(보라색)" 버튼 클릭 → 언팔로우
       if (button.classList.contains('following')) {
@@ -354,6 +391,7 @@
           method: 'DELETE'
         })
         .then(response => {
+          console.log('언팔로우 응답:', response.status);
           if (response.ok) {
             button.classList.remove('following');
             button.classList.add('follow');
@@ -363,9 +401,6 @@
             if (tab === 'following') {
               card.remove();
             }
-            
-            // ⭐️ 팔로잉 목록 데이터 업데이트
-            updateFollowingData('remove', userId);
             
             console.log('언팔로우 성공');
           } else {
@@ -383,20 +418,11 @@
           method: 'POST'
         })
         .then(response => {
+          console.log('팔로우 응답:', response.status);
           if (response.ok) {
             button.classList.remove('follow');
             button.classList.add('following');
             button.textContent = (tab === 'followers') ? '맞팔로우' : '팔로잉';
-            
-            // ⭐️ 팔로잉 목록 데이터에 추가
-            const userInfo = {
-              loginId: userId,
-              nickname: userName,
-              bio: card.querySelector('.status-message').textContent,
-              privacy: card.querySelector('.privacy-badge') ? 'private' : 'public',
-              profileImg: card.querySelector('.profile-picture').src
-            };
-            updateFollowingData('add', userId, userInfo);
             
             console.log('팔로우 성공');
           } else {

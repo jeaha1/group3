@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Shorts - Daily Log</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* 기본 레이아웃 - 사이드바 + 메인 */
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      transition: background 0.2s, color 0.2s;
+    }
+    body {
+      display: flex; flex-direction: row;
+      min-width: 1200px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* 🔥 사용자 프로필이 표시되는 사이드바 */
+    .sidebar {
+      width: 220px;
+      background: #fff;
+      border-right: 1px solid #eee;
+      padding: 24px 0 0 0;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      height: 100vh;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar .logo {
+      font-weight: bold;
+      margin-left: 24px;
+      margin-bottom: 32px;
+      font-size: 18px;
+    }
+    .sidebar .user {
+      display: flex;
+      align-items: center;
+      margin-bottom: 32px;
+      margin-left: 24px;
+    }
+    .sidebar .user img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+    .sidebar .user .default-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 4px 24px;
+    }
+    .sidebar ul li {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 16px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    /* 사이드바 링크 밑줄 제거 */
+    .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .sidebar ul li a:hover {
+      color: #4f46e5;
+    }
+    /* 설정 아래 구분선 */
+    .sidebar ul li:last-child {
+      position: relative;
+      padding-bottom: 4px;
+    }
+    .sidebar ul li:last-child::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: -5px;
+      height: 1px;
+      background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
+    }
+    /* 새 글 쓰기 버튼 */
+    .sidebar .new-post {
+      display: block;
+      margin-left: 24px;
+      margin-bottom: 20px;
+      padding: 0;
+      background: none;
+      color: #333;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+      transition: color 0.2s;
+    }
+    .sidebar .new-post:hover {
+      color: #4f46e5;
+    }
+    /* 다크모드 토글 */
+    .toggle-theme {
+      margin-left: 24px;
+      margin-bottom: 20px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #888;
+      padding: 0;
+      transition: all 0.2s ease;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .toggle-theme:hover {
+      color: #333;
+    }
+    /* 로그아웃 */
+    .sidebar .logout {
+      margin-left: 24px;
+      color: #888;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+    .sidebar .logout:hover {
+      color: #4f46e5;
+    }
+
+    /* 메인 컨텐츠 영역 - Shorts */
+    .shorts-main {
+      flex: 1;
+      background: #f3f3f3;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      overflow: auto;
+      padding-top: 40px;
+      box-sizing: border-box;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* 메인 컨테이너 - 영상과 컨트롤을 나란히 배치 */
+    .main-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    /* 비디오 컨테이너 */
+    #shortsContainer {
+      position: relative;
+      width: 40vw;
+      max-width: 360px;
+      aspect-ratio: 9 / 16;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    /* 비디오: 화면 꽉 채우되 비율 유지 */
+    #shortsContainer video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    /* 다시보기 버튼 */
+    .reload {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 40px;
+      height: 40px;
+      background: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #333;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    /* 사이드 컨트롤 - 영상 옆에 배치 */
+    .side-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-top: 280px;
+      align-items: center;
+    }
+
+    /* 좋아요 버튼 - 유튜브 쇼츠 스타일 핑크 하트 */
+    .like-button {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: visible;
+    }
+
+    .like-button:before { 
+      content: '🤍'; 
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    }
+
+    .like-button.liked {
+      background: rgba(255, 255, 255, 0.95);
+      animation: likeButtonPulse 0.6s ease;
+      box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+    }
+
+    .like-button.liked:before { 
+      content: '💖'; 
+      transform: scale(1.1);
+      filter: drop-shadow(0 2px 4px rgba(255, 20, 147, 0.4));
+    }
+
+    .like-button:hover { 
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* 좋아요 버튼 펄스 애니메이션 */
+    @keyframes likeButtonPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    /* 떠오르는 하트 애니메이션 */
+    .floating-heart {
+      position: absolute;
+      font-size: 20px;
+      pointer-events: none;
+      animation: floatUp 2s ease-out forwards;
+      z-index: 1000;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    }
+
+    @keyframes floatUp {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotate(0deg);
+      }
+      50% {
+        opacity: 0.8;
+        transform: translateY(-40px) scale(1.3) rotate(15deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-80px) scale(0.8) rotate(30deg);
+      }
+    }
+
+    /* 반짝이는 효과 */
+    .sparkle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #ff1493;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: sparkleAnimation 1.2s ease-out forwards;
+      box-shadow: 0 0 6px #ff1493;
+    }
+
+    @keyframes sparkleAnimation {
+      0% {
+        opacity: 1;
+        transform: scale(0) rotate(0deg);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.5) rotate(180deg);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0) rotate(360deg);
+      }
+    }
+
+    /* 댓글 버튼 */
+    .comment-button {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      font-size: 24px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+    }
+    .comment-button:before { 
+      content: '💬'; 
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    }
+    .comment-button:hover { transform: scale(1.1); }
+
+    /* 공유 버튼 */
+    .share-button {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease;
+      font-size: 20px;
+      color: #333;
+    }
+    .share-button:hover { transform: scale(1.1); }
+
+    /* 신고 버튼 - 사이드 컨트롤에 추가 */
+    .report-button {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 18px;
+      color: #666;
+    }
+    .report-button:hover { 
+      transform: scale(1.1);
+      color: #dc3545;
+    }
+
+    /* 버튼 아래 숫자/텍스트 */
+    .side-controls span {
+      font-size: 12px;
+      color: #fff;
+      text-align: center;
+      display: block;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    }
+
+    /* 채널 정보 & 설명 */
+    .info {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      color: #fff;
+      z-index: 10;
+      max-width: 80%;
+      line-height: 1.4;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    }
+    .info .channel {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .info .channel img {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      margin-right: 8px;
+      object-fit: cover;
+      border: 2px solid #fff;
+    }
+    .info .channel button {
+      margin-left: auto;
+      padding: 6px 12px;
+      background: #ff1493;
+      border: none;
+      color: #fff;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    .info .channel button:hover {
+      background: #e6127a;
+    }
+    
+    /* 수정된 설명 영역 - 더보기/접기 기능 추가 */
+    .info .desc {
+      font-size: 14px;
+      opacity: 0.9;
+      word-break: keep-all;
+      max-height: 80px;
+      overflow: hidden;
+      line-height: 1.4;
+      transition: max-height 0.3s ease;
+      position: relative;
+    }
+
+    .info .desc.expanded {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .info .desc-toggle {
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 4px;
+      text-decoration: underline;
+      display: inline-block;
+    }
+
+    .info .desc-toggle:hover {
+      color: #fff;
+    }
+
+    /* 구독 버튼 스타일 */
+    #subscribeBtn {
+      margin-left: 8px;
+      padding: 6px 12px;
+      background: #ff1493;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #subscribeBtn.subscribed {
+      background: #aaa;
+    }
+    #subscribeBtn:hover { 
+      background: #e6127a; 
+    }
+    #subscribeBtn.subscribed:hover { 
+      background: #888; 
+    }
+
+    /* 댓글 모달 - 유튜브 쇼츠 스타일 */
+    #commentModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    .comment-panel {
+      position: absolute;
+      top: 10%;
+      right: 0;
+      width: 400px;
+      height: 80%;
+      background: white;
+      border-radius: 12px 0 0 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    }
+
+    .comment-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fafafa;
+      border-radius: 12px 0 0 0;
+    }
+
+    .comment-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f0f0f;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #606060;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .close-btn:hover {
+      background: #f2f2f2;
+    }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .comment-item {
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .comment-item:hover {
+      background: #f9f9f9;
+    }
+
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .comment-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .comment-author {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f0f0f;
+      margin-bottom: 2px;
+    }
+
+    .comment-time {
+      font-size: 12px;
+      color: #606060;
+      margin-left: 8px;
+    }
+
+    .comment-text {
+      font-size: 14px;
+      line-height: 1.4;
+      color: #0f0f0f;
+      margin: 4px 0 8px 0;
+      word-wrap: break-word;
+    }
+
+    .comment-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    /* 댓글 좋아요 버튼 스타일 */
+    .comment-like-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: #606060;
+      padding: 6px 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .comment-like-btn:hover {
+      background: #f2f2f2;
+      transform: scale(1.05);
+    }
+
+    .comment-like-btn.liked {
+      color: #ff1493;
+    }
+
+    .comment-like-btn .like-count {
+      font-weight: 600;
+      min-width: 16px;
+      text-align: left;
+    }
+
+    .comment-reply-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: #606060;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .comment-reply-btn:hover {
+      background: #f2f2f2;
+    }
+
+    .comment-input-section {
+      padding: 12px 16px;
+      border-top: 1px solid #e0e0e0;
+      background: #fafafa;
+      border-radius: 0 0 0 12px;
+    }
+
+    .comment-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .current-user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .input-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 20px;
+      padding: 8px 16px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .comment-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      background: transparent;
+    }
+
+    .submit-btn {
+      background: none;
+      border: none;
+      color: #ff1493;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .submit-btn:hover {
+      background: #fff0f8;
+    }
+
+    .submit-btn:disabled {
+      color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .empty-comments {
+      text-align: center;
+      padding: 40px 20px;
+      color: #606060;
+    }
+
+    /* 신고 모달 스타일 */
+    .report-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      overflow-y: auto;
+    }
+    .report-modal.show {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .report-modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 30px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    body.dark .report-modal-content {
+      background-color: #2a2d31;
+      color: #e6e6e6;
+    }
+    .report-modal h3 {
+      margin-top: 0;
+      color: #dc3545;
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+    }
+    .report-reasons {
+      margin: 20px 0;
+    }
+    .report-reason {
+      display: block;
+      margin: 12px 0;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 8px;
+      transition: background 0.2s;
+      border: 1px solid #e9ecef;
+    }
+    .report-reason:hover {
+      background: #f8f9fa;
+      border-color: #dc3545;
+    }
+    body.dark .report-reason {
+      border-color: #404040;
+    }
+    body.dark .report-reason:hover {
+      background: #404040;
+      border-color: #dc3545;
+    }
+    .report-reason input {
+      margin-right: 10px;
+    }
+    .report-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 30px;
+    }
+    .report-submit-btn, .report-cancel-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    .report-submit-btn {
+      background: #dc3545;
+      color: white;
+    }
+    .report-submit-btn:hover {
+      background: #c82333;
+    }
+    .report-cancel-btn {
+      background: #6c757d;
+      color: white;
+    }
+    .report-cancel-btn:hover {
+      background: #545b62;
+    }
+
+    /* 다크모드 스타일 */
+    body.dark {
+      background: #181a1b !important;
+      color: #e6e6e6 !important;
+    }
+    body.dark .sidebar {
+      background: #1a1c1e;
+      border-right: 1px solid #222;
+    }
+    body.dark .shorts-main {
+      background: #181a1b;
+    }
+    body.dark .sidebar ul li,
+    body.dark .sidebar .logo,
+    body.dark .sidebar .logout,
+    body.dark .sidebar .new-post {
+      color: #e6e6e6;
+    }
+    /* 다크모드 링크 밑줄 제거 */
+    body.dark .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+    }
+    body.dark .sidebar ul li a:hover {
+      color: #6366f1;
+    }
+    body.dark .sidebar .new-post:hover {
+      color: #6366f1;
+    }
+    body.dark .sidebar .logout:hover {
+      color: #6366f1;
+    }
+    body.dark .sidebar ul li:last-child::after {
+      background: linear-gradient(to right, #404040 20%, #404040 80%, transparent);
+    }
+    body.dark .toggle-theme {
+      color: #e6e6e6;
+    }
+    body.dark .toggle-theme:hover {
+      color: #fff;
+    }
+
+    /* 반응형 - 모바일에서는 기존 레이아웃 유지 */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        min-width: auto;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: auto;
+        min-height: auto;
+        padding: 20px 0;
+      }
+      
+      .shorts-main {
+        padding-top: 20px;
+      }
+      
+      .main-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .side-controls {
+        flex-direction: row;
+        padding-top: 20px;
+        gap: 20px;
+      }
+      
+      .side-controls span {
+        margin-bottom: 0;
+      }
+
+      .comment-panel {
+        width: 100%;
+        top: 40%;
+        height: 60%;
+        border-radius: 12px 12px 0 0;
+      }
+      
+      .report-modal-content { 
+        margin: 2% auto;
+        padding: 20px; 
+        width: 95%;
+        max-width: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔥 사용자 프로필이 표시되는 사이드바 -->
+  <div class="sidebar">
+    <div class="logo">Daily Log</div>
+    <div class="user">
+      <img th:if="${user != null and user.profileImg != null}" 
+           th:src="@{${user.profileImg}}" 
+           alt="User" />
+      <div th:if="${user == null or user.profileImg == null}" 
+           class="default-avatar">
+        <span th:text="${user != null ? user.nickname.substring(0,1).toUpperCase() : '?'}">?</span>
+      </div>
+      <div>
+        <div th:text="${user != null ? user.nickname : '사용자명'}">사용자명</div>
+      </div>
+    </div>
+    <ul>
+      <li><a th:href="@{/}">홈</a></li>
+      <li><a th:href="@{/posts}">글 목록</a></li>
+      <li><a th:href="@{/notifications}">알림</a></li>
+      <li><a th:href="@{/friends}">친구 목록</a></li>
+      <li><a th:href="@{/chat}">채팅</a></li>
+      <li><a th:href="@{/shorts}">숏폼</a></li>
+      <li><a th:href="@{/subscriptions}">구독 관리</a></li>
+      <li><a th:href="@{/mypage}">내 프로필</a></li>
+      <li><a th:href="@{/setting}">설정</a></li>
+    </ul>
+    <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
+    <div class="logout" onclick="location.href='/logout'">로그아웃</div>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+  </div>
+
+  <!-- 메인 컨텐츠 - Shorts -->
+  <div class="shorts-main">
+    <div class="main-container">
+      <div id="shortsContainer">
+        <video id="shortVideo" autoplay muted playsinline></video>
+
+        <div class="reload" onclick="loadNext()">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </div>
+
+        <div class="info">
+          <div class="channel">
+            <img id="channelAvatar" src="/static/img/default-avatar.png" alt="프로필">
+            <strong id="channelName">@작성자</strong>
+            <button id="subscribeBtn" data-author-id="">구독</button>
+          </div>
+          <div class="desc" id="videoDesc">
+            영상 설명이 여기에 표시됩니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="side-controls">
+        <div>
+          <button class="like-button" onclick="toggleLike(this)"></button>
+          <span id="likeCount">1</span>
+        </div>
+
+        <div>
+          <button class="comment-button" onclick="openComments()"></button>
+          <span id="commentCount">2</span>
+        </div>
+
+        <div>
+          <button class="share-button" onclick="share()">
+            <i class="fa-solid fa-share"></i>
+          </button>
+          <span>공유</span>
+        </div>
+
+        <!-- 신고 버튼 추가 -->
+        <div>
+          <button class="report-button" onclick="openReportModal()">
+            <i class="fas fa-flag"></i>
+          </button>
+          <span>신고</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 댓글 모달 - 유튜브 쇼츠 스타일 -->
+  <div id="commentModal">
+    <div class="comment-panel">
+      <!-- 헤더 -->
+      <div class="comment-header">
+        <h3>댓글 <span id="commentCountHeader">0</span></h3>
+        <button class="close-btn" onclick="closeComments()">&times;</button>
+      </div>
+      
+      <!-- 댓글 목록 -->
+      <div id="commentsList" class="comments-list">
+        <!-- 댓글들이 여기에 동적으로 추가됩니다 -->
+      </div>
+      
+      <!-- 댓글 입력창 -->
+      <div class="comment-input-section">
+        <div class="comment-input-wrapper">
+          <img id="currentUserAvatar" src="/static/img/default-avatar.png" 
+               class="current-user-avatar" alt="내 프로필">
+          <div class="input-container">
+            <input type="text" id="commentInput" class="comment-input" 
+                   placeholder="댓글 추가...">
+            <button class="submit-btn" onclick="submitComment()">전송</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 신고 모달 -->
+  <div id="reportModal" class="report-modal">
+    <div class="report-modal-content">
+      <h3><i class="fas fa-flag"></i> 영상 신고하기</h3>
+      <p>이 영상을 신고하는 이유를 선택해주세요.</p>
+      
+      <div class="report-reasons">
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="spam">
+          <span>스팸 또는 광고</span>
+        </label>
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="harassment">
+          <span>괴롭힘 또는 혐오 발언</span>
+        </label>
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="inappropriate">
+          <span>부적절한 콘텐츠</span>
+        </label>
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="copyright">
+          <span>저작권 침해</span>
+        </label>
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="false_info">
+          <span>거짓 정보</span>
+        </label>
+        <label class="report-reason">
+          <input type="radio" name="reportReason" value="other">
+          <span>기타</span>
+        </label>
+      </div>
+      
+      <div class="report-buttons">
+        <button class="report-cancel-btn" onclick="closeReportModal()">취소</button>
+        <button class="report-submit-btn" onclick="submitReport()">신고하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentPostId = null;
+    let currentUserEmail = null;
+    let currentPost = null;
+
+    // 다크모드 토글
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
+    }
+    
+    // 페이지 로드 시 다크모드 복원
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+      }
+      initializePage();
+    });
+
+    // 페이지 로드 시 사용자 이메일 가져오기
+    async function getCurrentUser() {
+        try {
+            const response = await fetch('/api/current-user');
+            const user = await response.json();
+            currentUserEmail = user.email;
+            
+            // 현재 사용자 아바타 설정
+            if (user.profileImg) {
+                document.getElementById('currentUserAvatar').src = user.profileImg;
+            }
+        } catch (error) {
+            console.error('사용자 정보를 가져올 수 없습니다:', error);
+        }
+    }
+
+    // 텍스트 길이에 따라 더보기 버튼 표시
+    function setupDescriptionToggle(content) {
+        const descElement = document.getElementById('videoDesc');
+        const maxLength = 100; // 100자 이상이면 더보기 표시
+        
+        if (content && content.length > maxLength) {
+            const shortText = content.substring(0, maxLength) + '...';
+            descElement.innerHTML = `
+                <span class="desc-text">${shortText}</span>
+                <br><span class="desc-toggle" onclick="toggleDescription()">더보기</span>
+            `;
+            descElement.setAttribute('data-full-text', content);
+            descElement.setAttribute('data-short-text', shortText);
+        } else {
+            descElement.innerText = content || '설명이 없습니다.';
+        }
+    }
+
+    // 더보기/접기 토글 함수
+    function toggleDescription() {
+        const descElement = document.getElementById('videoDesc');
+        const fullText = descElement.getAttribute('data-full-text');
+        const shortText = descElement.getAttribute('data-short-text');
+        const isExpanded = descElement.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // 접기
+            descElement.innerHTML = `
+                <span class="desc-text">${shortText}</span>
+                <br><span class="desc-toggle" onclick="toggleDescription()">더보기</span>
+            `;
+            descElement.classList.remove('expanded');
+        } else {
+            // 펼치기
+            descElement.innerHTML = `
+                <span class="desc-text">${fullText}</span>
+                <br><span class="desc-toggle" onclick="toggleDescription()">접기</span>
+            `;
+            descElement.classList.add('expanded');
+        }
+    }
+
+    // 수정된 loadNext 함수 - 실시간 구독 상태 확인
+    async function loadNext() {
+        try {
+            const res = await fetch('/shorts/random');
+            const post = await res.json();
+            if (!post.videoPath) return;
+
+            currentPost = post;
+            currentPostId = post.id;
+
+            const v = document.getElementById('shortVideo');
+            document.getElementById('likeCount').innerText = formatCount(post.likeCount || 0);
+            document.getElementById('commentCount').innerText = formatCount(post.commentCount || 0);
+            
+            setupDescriptionToggle(post.content);
+            
+            document.getElementById('channelName').innerText = post.authorNickname || '@작성자';
+            document.getElementById('channelAvatar').src = post.authorProfileImg || '/static/img/default-avatar.png';
+            
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            subscribeBtn.setAttribute('data-author-id', post.authorId || '');
+            
+            // 자기 자신의 게시물인지 확인
+            const isMyPost = await checkIfMyPost(post.authorId);
+            
+            if (isMyPost) {
+                // 자기 자신의 게시물이면 구독 버튼 숨기기
+                subscribeBtn.style.display = 'none';
+            } else {
+                // 다른 사람의 게시물이면 구독 버튼 표시
+                subscribeBtn.style.display = 'inline-block';
+                // 실시간 구독 상태 확인
+                await updateSubscribeButtonRealtime(post.authorId);
+            }
+            
+            v.src = post.videoPath;
+            await v.play();
+            
+            await checkLikeStatus();
+            
+        } catch (error) {
+            console.error('영상 로드 실패:', error);
+        }
+    }
+
+    // 자기 자신의 게시물인지 확인하는 함수
+    async function checkIfMyPost(authorId) {
+        if (!currentUserEmail || !authorId) {
+            return false;
+        }
+        
+        try {
+            const myUserResponse = await fetch('/api/my-user-id');
+            const myUserId = await myUserResponse.json();
+            
+            return myUserId === authorId;
+            
+        } catch (error) {
+            console.error('사용자 확인 실패:', error);
+            return false;
+        }
+    }
+
+    // 실시간 구독 상태 확인 함수
+    async function updateSubscribeButtonRealtime(authorId) {
+        const btn = document.getElementById('subscribeBtn');
+        
+        if (!authorId || !currentUserEmail) {
+            btn.innerText = '구독';
+            btn.classList.remove('subscribed');
+            return;
+        }
+        
+        try {
+            // 구독 관리와 동일한 API 사용
+            const res = await fetch(`/subscriptions/${authorId}/status`);
+            const result = await res.json();
+            
+            const isSubscribed = result.subscribed;
+            
+            btn.classList.toggle('subscribed', isSubscribed);
+            btn.innerText = isSubscribed ? '구독중' : '구독';
+            
+            // currentPost 객체도 업데이트
+            if (currentPost) {
+                currentPost.subscribed = isSubscribed;
+            }
+            
+        } catch (e) { 
+            console.error('구독 상태 확인 실패:', e);
+            btn.innerText = '구독';
+            btn.classList.remove('subscribed');
+        }
+    }
+
+    // 좋아요 상태 확인 함수
+    async function checkLikeStatus() {
+        if (!currentPostId || !currentUserEmail) {
+            const likeBtn = document.querySelector('.like-button');
+            likeBtn.classList.remove('liked');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/likes/status/${currentPostId}?userEmail=${encodeURIComponent(currentUserEmail)}`);
+            const isLiked = await response.json();
+            
+            const likeBtn = document.querySelector('.like-button');
+            
+            if (isLiked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+            
+        } catch (error) {
+            console.error('좋아요 상태 확인 실패:', error);
+            const likeBtn = document.querySelector('.like-button');
+            likeBtn.classList.remove('liked');
+        }
+    }
+
+    // 좋아요 토글 함수
+    async function toggleLike(btn) {
+        if (!currentPostId || !currentUserEmail) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        const wasLiked = btn.classList.contains('liked');
+
+        try {
+            const response = await fetch(`/likes/${currentPostId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `userEmail=${encodeURIComponent(currentUserEmail)}`
+            });
+
+            if (response.ok) {
+                const newLikeCount = await response.json();
+                
+                await checkLikeStatus();
+                
+                document.getElementById('likeCount').innerText = formatCount(newLikeCount);
+                
+                if (!wasLiked && btn.classList.contains('liked')) {
+                    createFloatingHearts(btn);
+                    createSparkles(btn);
+                    
+                    btn.style.animation = 'likeButtonPulse 0.6s ease';
+                    
+                    setTimeout(() => {
+                        btn.style.animation = '';
+                    }, 600);
+                } else if (wasLiked && !btn.classList.contains('liked')) {
+                    btn.style.transform = 'scale(0.9)';
+                    setTimeout(() => {
+                        btn.style.transform = 'scale(1)';
+                    }, 150);
+                }
+                
+            } else {
+                throw new Error('좋아요 처리 실패');
+            }
+        } catch (error) {
+            console.error('좋아요 토글 실패:', error);
+            alert('좋아요 처리 중 오류가 발생했습니다.');
+        }
+    }
+
+    // 떠오르는 하트 생성
+    function createFloatingHearts(button) {
+        const hearts = ['💖', '💕', '💗', '💓', '💝'];
+        
+        for (let i = 0; i < 6; i++) {
+            setTimeout(() => {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+                
+                const rect = button.getBoundingClientRect();
+                heart.style.left = (rect.left + Math.random() * 60 - 30) + 'px';
+                heart.style.top = rect.top + 'px';
+                
+                document.body.appendChild(heart);
+                
+                setTimeout(() => {
+                    if (heart.parentNode) {
+                        heart.parentNode.removeChild(heart);
+                    }
+                }, 2000);
+            }, i * 80);
+        }
+    }
+
+    // 반짝이는 효과 생성
+    function createSparkles(button) {
+        const colors = ['#ff1493', '#ff69b4', '#ffc0cb', '#ff91a4', '#ffb6c1'];
+        
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                const rect = button.getBoundingClientRect();
+                const angle = (i / 10) * 2 * Math.PI;
+                const radius = 35 + Math.random() * 25;
+                
+                sparkle.style.left = (rect.left + rect.width/2 + Math.cos(angle) * radius) + 'px';
+                sparkle.style.top = (rect.top + rect.height/2 + Math.sin(angle) * radius) + 'px';
+                
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    if (sparkle.parentNode) {
+                        sparkle.parentNode.removeChild(sparkle);
+                    }
+                }, 1200);
+            }, i * 40);
+        }
+    }
+
+    // 댓글 창 열기
+    async function openComments() {
+        if (!currentPostId) {
+            alert('영상을 먼저 로드해주세요.');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/comments/${currentPostId}`);
+            const comments = await response.json();
+            
+            document.getElementById('commentCountHeader').textContent = comments.length;
+            
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '';
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = `
+                    <div class="empty-comments">
+                        <p style="margin: 0; font-size: 14px;">아직 댓글이 없습니다.</p>
+                        <p style="margin: 8px 0 0 0; font-size: 13px;">첫 번째 댓글을 작성해보세요!</p>
+                    </div>
+                `;
+            } else {
+                for (const comment of comments) {
+                    const likeStatusResponse = await fetch(`/api/comments/${comment.id}/like-status`);
+                    const likeStatus = await likeStatusResponse.json();
+                    
+                    const commentDiv = document.createElement('div');
+                    commentDiv.className = 'comment-item';
+                    commentDiv.innerHTML = `
+                        <img src="${comment.authorProfileImg || '/static/img/default-avatar.png'}" 
+                             alt="프로필" class="comment-avatar"
+                             onerror="this.src='/static/img/default-avatar.png'">
+                        <div class="comment-content">
+                            <div style="display: flex; align-items: center;">
+                                <span class="comment-author">${comment.author}</span>
+                                <span class="comment-time">${formatTimeAgo(comment.createdAt)}</span>
+                            </div>
+                            <p class="comment-text">${comment.content}</p>
+                            <div class="comment-actions">
+                                <button class="comment-like-btn ${likeStatus.liked ? 'liked' : ''}" 
+                                        onclick="toggleCommentLike(${comment.id}, this)">
+                                    <span>${likeStatus.liked ? '💖' : '🤍'}</span>
+                                    <span class="like-count">${likeStatus.likeCount || 0}</span>
+                                </button>
+                                <button class="comment-reply-btn" onclick="replyComment(${comment.id})">
+                                    답글
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    commentsList.appendChild(commentDiv);
+                }
+            }
+            
+            document.getElementById('commentModal').style.display = 'block';
+            document.getElementById('commentInput').focus();
+            
+        } catch (error) {
+            console.error('댓글 로드 실패:', error);
+            alert('댓글을 불러올 수 없습니다.');
+        }
+    }
+
+    // 댓글 좋아요 토글 함수
+    async function toggleCommentLike(commentId, button) {
+        try {
+            const response = await fetch(`/api/comments/${commentId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                const heartSpan = button.querySelector('span:first-child');
+                const countSpan = button.querySelector('.like-count');
+                
+                if (result.liked) {
+                    button.classList.add('liked');
+                    heartSpan.textContent = '💖';
+                    
+                    button.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        button.style.transform = 'scale(1)';
+                    }, 200);
+                } else {
+                    button.classList.remove('liked');
+                    heartSpan.textContent = '🤍';
+                }
+                
+                countSpan.textContent = result.likeCount || 0;
+                
+            } else {
+                alert(result.message || '좋아요 처리에 실패했습니다.');
+            }
+            
+        } catch (error) {
+            console.error('댓글 좋아요 실패:', error);
+            alert('좋아요 처리 중 오류가 발생했습니다.');
+        }
+    }
+
+    // 댓글 작성
+    async function submitComment() {
+        const commentInput = document.getElementById('commentInput');
+        const content = commentInput.value.trim();
+        
+        if (!content) {
+            alert('댓글 내용을 입력해주세요.');
+            return;
+        }
+        
+        if (!currentPostId) {
+            alert('영상을 먼저 로드해주세요.');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/comments/${currentPostId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `content=${encodeURIComponent(content)}`
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                document.getElementById('commentCount').innerText = formatCount(result.commentCount);
+                
+                commentInput.value = '';
+                
+                openComments();
+                
+            } else {
+                alert(result.message || '댓글 작성에 실패했습니다.');
+            }
+            
+        } catch (error) {
+            console.error('댓글 작성 실패:', error);
+            alert('댓글 작성 중 오류가 발생했습니다.');
+        }
+    }
+
+    // 댓글 창 닫기
+    function closeComments() {
+        document.getElementById('commentModal').style.display = 'none';
+    }
+
+    // 시간 포맷팅
+    function formatTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const weeks = Math.floor(days / 7);
+        const months = Math.floor(days / 30);
+        const years = Math.floor(days / 365);
+        
+        if (minutes < 1) return '방금 전';
+        if (minutes < 60) return `${minutes}분 전`;
+        if (hours < 24) return `${hours}시간 전`;
+        if (days < 7) return `${days}일 전`;
+        if (weeks < 4) return `${weeks}주 전`;
+        if (months < 12) return `${months}개월 전`;
+        return `${years}년 전`;
+    }
+
+    // 댓글 답글 (추후 구현)
+    function replyComment(commentId) {
+        console.log('댓글 답글:', commentId);
+    }
+    
+    function share() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Shorts 영상',
+                text: '재미있는 영상을 확인해보세요!',
+                url: window.location.href
+            });
+        } else {
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => alert('링크가 복사되었습니다!'))
+                .catch(() => alert('링크 복사에 실패했습니다.'));
+        }
+    }
+    
+    // 숫자 포맷팅
+    function formatCount(count) {
+        if (count >= 1000000) {
+            return (count / 1000000).toFixed(1) + 'M';
+        } else if (count >= 1000) {
+            return (count / 1000).toFixed(1) + 'K';
+        }
+        return count.toString();
+    }
+
+    // 수정된 구독/구독취소 토글 함수 - 구독 관리와 동일한 API 사용
+    async function toggleSubscribe() {
+        const btn = document.getElementById('subscribeBtn');
+        const authorId = btn.dataset.authorId;
+        
+        if (!authorId) {
+            alert('작성자 정보가 없습니다.');
+            return;
+        }
+        
+        if (!currentUserEmail) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+        
+        const isCurrentlySubscribed = btn.classList.contains('subscribed');
+        const endpoint = isCurrentlySubscribed ? 'unsubscribe' : 'subscribe';
+        
+        try {
+            // 구독 관리와 동일한 URL 사용
+            const res = await fetch(`/subscriptions/${authorId}/${endpoint}`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await res.json();
+            
+            if (result.success) {
+                btn.classList.toggle('subscribed');
+                btn.innerText = isCurrentlySubscribed ? '구독' : '구독중';
+                
+                if (currentPost) {
+                    currentPost.subscribed = !isCurrentlySubscribed;
+                }
+            } else {
+                alert(result.error || '구독 처리에 실패했습니다.');
+            }
+            
+        } catch (e) {
+            console.error('구독 처리 실패:', e);
+            alert('구독 처리에 실패했습니다.');
+        }
+    }
+
+    // 신고 모달 열기
+    function openReportModal() {
+        if (!currentPostId) {
+            alert('영상을 먼저 로드해주세요.');
+            return;
+        }
+        
+        const modal = document.getElementById('reportModal');
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        
+        // body 스크롤 방지
+        document.body.style.overflow = 'hidden';
+        
+        // 라디오 버튼 초기화
+        document.querySelectorAll('input[name="reportReason"]').forEach(radio => {
+            radio.checked = false;
+        });
+    }
+
+    // 신고 모달 닫기
+    function closeReportModal() {
+        const modal = document.getElementById('reportModal');
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        
+        // body 스크롤 복원
+        document.body.style.overflow = 'auto';
+    }
+
+    // 신고 제출
+    function submitReport() {
+        const selectedReason = document.querySelector('input[name="reportReason"]:checked');
+        if (!selectedReason) {
+            alert('신고 사유를 선택해주세요.');
+            return;
+        }
+        
+        if (!currentPostId) {
+            alert('영상을 먼저 로드해주세요.');
+            return;
+        }
+        
+        const reportData = {
+            postId: currentPostId,
+            author: currentPost ? currentPost.authorNickname : '알 수 없음',
+            reason: selectedReason.value
+        };
+        
+        // 서버로 신고 데이터 전송
+        fetch('/reports', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(reportData)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('신고가 접수되었습니다. 검토 후 적절한 조치를 취하겠습니다.');
+                closeReportModal();
+            } else {
+                alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('신고 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+        });
+    }
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeComments();
+            closeReportModal();
+        }
+    });
+
+    // 모달 외부 클릭 시 닫기
+    window.onclick = function(event) {
+        const reportModal = document.getElementById('reportModal');
+        if (event.target === reportModal) {
+            closeReportModal();
+        }
+    }
+
+    // 엔터 키로 댓글 전송
+    document.addEventListener('DOMContentLoaded', function() {
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    submitComment();
+                }
+            });
+        }
+    });
+
+    // 구독 버튼 이벤트 리스너 등록
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('subscribeBtn').addEventListener('click', toggleSubscribe);
+        document.getElementById('shortVideo').addEventListener('ended', loadNext);
+    });
+
+    // 초기화 함수
+    async function initializePage() {
+        await getCurrentUser();
+        await loadNext();
+    }
+  </script>
+</body>
+</html>

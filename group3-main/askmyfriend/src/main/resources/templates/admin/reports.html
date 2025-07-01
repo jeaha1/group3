@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>관리자 | 신고 목록</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f7f7f7;
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+      gap: 4px;
+    }
+
+    /* 사이드바 스타일 */
+    .sidebar {
+      width: 200px;
+      background: #232323;
+      color: #fff;
+      border-radius: 0 0 18px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 32px 0 24px 0;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.07);
+      min-height: 100vh;
+    }
+
+    .sidebar-title {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-menu {
+      width: 100%;
+      flex: 1;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 0 12px 32px;
+      font-size: 16px;
+      color: #fff;
+      text-decoration: none;
+      border-left: 4px solid transparent;
+      cursor: pointer;
+      transition: background 0.16s, color 0.16s, border-color 0.16s;
+    }
+
+    .sidebar-link.active,
+    .sidebar-link:hover {
+      background: #30333a;
+      color: #4fc3f7;
+      border-left: 4px solid #4fc3f7;
+    }
+
+    .sidebar-link.logout {
+      color: #ff6666;
+      margin-top: 32px;
+      border-left: 4px solid transparent;
+    }
+
+    .sidebar-link.logout:hover {
+      background: #3a2323;
+      color: #ff8888;
+      border-left: 4px solid #ff8888;
+    }
+
+    .sidebar-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+
+    /* 메인 컨테이너 스타일 */
+    .admin-container {
+      flex: 1;
+      max-width: 1200px;
+      margin: 40px 0;
+      padding: 24px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      color: #232323;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    /* 테이블 스타일 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #eee;
+      padding: 12px 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f0f2f5;
+      font-weight: bold;
+      color: #232323;
+      font-size: 14px;
+    }
+
+    td {
+      font-size: 13px;
+      color: #333;
+    }
+
+    /* 상태별 색상 */
+    .status-pending {
+      color: #ff6b35;
+      font-weight: bold;
+    }
+
+    .status-resolved {
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .status-rejected {
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    /* 버튼 스타일 */
+    button {
+      padding: 6px 12px;
+      margin: 0 2px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+
+    button:not(:disabled) {
+      background: #232323;
+      color: white;
+    }
+
+    button:not(:disabled):hover {
+      background: #444;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: #ccc;
+      color: #888;
+      cursor: not-allowed;
+    }
+
+    .btn-resolve {
+  background: #28a745 !important;
+  color: #000 !important; /* 진한 검은색으로 변경 */
+}
+
+.btn-resolve:hover {
+  background: #218838 !important;
+  color: #000 !important; /* 호버 시에도 검은색 유지 */
+}
+
+.btn-reject {
+  background: #dc3545 !important;
+  color: #000 !important; /* 진한 검은색으로 변경 */
+}
+
+.btn-reject:hover {
+  background: #c82333 !important;
+  color: #000 !important; /* 호버 시에도 검은색 유지 */
+}
+
+    /* 사유 텍스트 스타일 */
+    .reason-text {
+      padding: 4px 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #495057;
+    }
+
+    /* 반응형 디자인 */
+    @media (max-width: 1100px) {
+      .admin-container { 
+        max-width: 100%; 
+        margin: 20px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .admin-layout { 
+        flex-direction: column; 
+      }
+      
+      .sidebar { 
+        flex-direction: row; 
+        width: 100%; 
+        min-height: unset; 
+        border-radius: 0 0 18px 18px; 
+        padding: 16px 0;
+      }
+      
+      .sidebar-title {
+        margin-bottom: 0;
+        margin-right: 20px;
+        font-size: 18px;
+      }
+      
+      .sidebar-menu { 
+        display: flex; 
+        flex-direction: row; 
+        gap: 8px;
+      }
+      
+      .sidebar-link { 
+        padding: 12px 16px; 
+        font-size: 15px; 
+        border-left: none; 
+        border-bottom: 4px solid transparent; 
+        white-space: nowrap;
+      }
+      
+      .sidebar-link.active, 
+      .sidebar-link:hover { 
+        border-left: none; 
+        border-bottom: 4px solid #4fc3f7; 
+      }
+      
+      .sidebar-link.logout { 
+        margin-top: 0; 
+      }
+
+      .admin-container {
+        margin: 10px;
+        padding: 16px;
+      }
+
+      table {
+        font-size: 0.85em;
+      }
+
+      th, td {
+        padding: 8px 4px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar-menu {
+        flex-wrap: wrap;
+      }
+      
+      .sidebar-link {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+      
+      .sidebar-icon {
+        font-size: 16px;
+        width: 18px;
+      }
+
+      /* 모바일에서 테이블 스크롤 */
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 600px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- 사이드바 -->
+  <nav class="sidebar">
+    <div class="sidebar-title">관리자</div>
+    <div class="sidebar-menu">
+      <a class="sidebar-link" href="/admin/dashboard">
+        <span class="sidebar-icon">📊</span>대시보드
+      </a>
+      <a class="sidebar-link" href="/admin/members">
+        <span class="sidebar-icon">👥</span>회원 관리
+      </a>
+      <a class="sidebar-link active" href="/admin/reports">
+        <span class="sidebar-icon">🚩</span>신고 관리
+      </a>
+      <a class="sidebar-link" href="/admin/inquiries">
+        <span class="sidebar-icon">💬</span>1:1 문의 관리
+      </a>
+      <a class="sidebar-link" href="/admin/chatlog">
+        <span class="sidebar-icon">💬</span>채팅 로그 보기
+      </a>
+      <a class="sidebar-link logout" href="/admin/logout">
+        <span class="sidebar-icon">📕</span>로그아웃
+      </a>
+    </div>
+  </nav>
+
+  <!-- 본문 영역 -->
+  <div class="admin-container">
+    <h1>신고 목록</h1>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>신고자</th>
+            <th>타입</th>
+            <th>대상ID</th>
+            <th>사유</th>
+            <th>등록일</th>
+            <th>상태</th>
+            <th>액션</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="r : ${reports}">
+            <td th:text="${r.id}">1</td>
+            <td th:text="${r.reporter}">user123</td>
+            <td th:text="${r.targetType}">POST</td>
+            <td th:text="${r.targetId}">45</td>
+
+            <!-- 사유 컬럼: 코드값 → 한글 레이블 매핑 -->
+            <td>
+              <span class="reason-text" th:switch="${r.reason}">
+                <span th:case="'spam'">스팸 또는 광고</span>
+                <span th:case="'harassment'">괴롭힘 또는 혐오 발언</span>
+                <span th:case="'inappropriate'">부적절한 콘텐츠</span>
+                <span th:case="'copyright'">저작권 침해</span>
+                <span th:case="'false_info'">거짓 정보</span>
+                <span th:case="'other'">기타</span>
+                <span th:case="*" th:text="${r.reason}">알 수 없는 사유</span>
+              </span>
+            </td>
+
+            <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">
+              2025-06-30 23:49
+            </td>
+            
+            <td>
+              <span th:class="${'status-' + r.status.name().toLowerCase()}" 
+                    th:text="${r.status}">PENDING</span>
+            </td>
+            
+            <td>
+              <!-- PENDING 상태에서만 활성화 -->
+              <button
+                class="btn-resolve"
+                th:disabled="${r.status.name() ne 'PENDING'}"
+                th:onclick="|patchStatus(${r.id}, 'RESOLVED')|">
+                완료
+              </button>
+              <button
+                class="btn-reject"
+                th:disabled="${r.status.name() ne 'PENDING'}"
+                th:onclick="|patchStatus(${r.id}, 'REJECTED')|">
+                거부
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  function patchStatus(id, status) {
+    // 버튼 비활성화로 중복 클릭 방지
+    const buttons = document.querySelectorAll(`button[onclick*="${id}"]`);
+    buttons.forEach(btn => btn.disabled = true);
+
+    fetch(`/reports/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    })
+    .then(res => {
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert('처리 실패: ' + res.statusText);
+        // 실패 시 버튼 재활성화
+        buttons.forEach(btn => btn.disabled = false);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('네트워크 오류가 발생했습니다.');
+      // 오류 시 버튼 재활성화
+      buttons.forEach(btn => btn.disabled = false);
+    });
+  }
+</script>
+</body>
+</html>

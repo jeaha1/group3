@@ -2,6 +2,7 @@ package com.group3.askmyfriend.service;
 
 import com.group3.askmyfriend.dto.MypageDto;
 import com.group3.askmyfriend.entity.UserEntity;
+import com.group3.askmyfriend.entity.CommentEntity;
 import com.group3.askmyfriend.repository.UserRepository;
 import com.group3.askmyfriend.repository.FollowRepository;
 import com.group3.askmyfriend.repository.PostRepository;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Service
 public class MypageService {
@@ -78,61 +80,207 @@ public class MypageService {
         );
     }
 
-    // 본인이 작성한 게시물 목록
+    // ⭐️ 본인이 작성한 게시물 목록 (디버깅 강화)
     public List<PostEntity> getMyPosts(String loginId) {
         try {
+            System.out.println("=== 게시물 조회 시작 ===");
+            System.out.println("조회할 loginId: " + loginId);
+            
             UserEntity user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
             
+            System.out.println("사용자 찾음:");
+            System.out.println("- 닉네임: " + user.getNickname());
+            System.out.println("- userId: " + user.getUserId());
+            System.out.println("- 이메일: " + user.getEmail());
+            
+            // ⭐️ 먼저 전체 게시물 수 확인
+            List<PostEntity> allPosts = postRepository.findAll();
+            System.out.println("전체 게시물 수: " + allPosts.size());
+            
+            // ⭐️ 전체 게시물의 작성자 정보 확인 (최대 5개만)
+            int count = 0;
+            for (PostEntity post : allPosts) {
+                if (count >= 5) break;
+                if (post.getAuthor() != null) {
+                    System.out.println("게시물 ID: " + post.getId() + 
+                                     ", 작성자 userId: " + post.getAuthor().getUserId() + 
+                                     ", 작성자 닉네임: " + post.getAuthor().getNickname());
+                } else {
+                    System.out.println("게시물 ID: " + post.getId() + ", 작성자: null");
+                }
+                count++;
+            }
+            
+            // ⭐️ 해당 사용자의 게시물 조회
             List<PostEntity> posts = postRepository.findByAuthorOrderByCreatedAtDesc(user);
-            System.out.println("조회된 게시물 수: " + posts.size());
+            System.out.println("조회된 사용자 게시물 수: " + posts.size());
+            
+            // ⭐️ 조회된 게시물 상세 정보
+            for (PostEntity post : posts) {
+                System.out.println("- 게시물 ID: " + post.getId() + 
+                                 ", 내용: " + (post.getContent() != null ? 
+                                              post.getContent().substring(0, Math.min(20, post.getContent().length())) + "..." : "null") + 
+                                 ", 작성일: " + post.getCreatedAt());
+            }
+            
+            // ⭐️ 만약 조회된 게시물이 없다면 다른 방법으로 시도
+            if (posts.isEmpty()) {
+                System.out.println("=== 다른 방법으로 조회 시도 ===");
+                List<PostEntity> filteredPosts = allPosts.stream()
+                    .filter(post -> post.getAuthor() != null && 
+                                   post.getAuthor().getUserId().equals(user.getUserId()))
+                    .collect(Collectors.toList());
+                System.out.println("필터링된 게시물 수: " + filteredPosts.size());
+                
+                if (!filteredPosts.isEmpty()) {
+                    System.out.println("필터링 방법으로 게시물 찾음!");
+                    return filteredPosts;
+                }
+            }
             
             return posts;
+            
         } catch (Exception e) {
             System.err.println("게시물 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
-    // 본인이 댓글을 단 게시물 목록
+    // ⭐️ 본인이 댓글을 단 게시물 목록 (완전히 새로 작성)
     public List<PostEntity> getMyRepliedPosts(String loginId) {
         try {
-            UserEntity user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
-            return commentRepository.findPostsByReplierOrderByCreatedDateDesc(user);
-        } catch (Exception e) {
-            System.err.println("답글 게시물 조회 중 오류: " + e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-
-    // 본인이 좋아요를 누른 게시물 목록
-    public List<PostEntity> getMyLikedPosts(String loginId) {
-        try {
+            System.out.println("=== 댓글 게시물 조회 시작 ===");
+            System.out.println("조회할 loginId: " + loginId);
+            
             UserEntity user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
             
-            // UserEntity의 email 필드를 사용
-            String userEmail = user.getEmail();
-            return likeRepository.findPostsByUserEmailOrderByIdDesc(userEmail);
+            System.out.println("사용자 찾음: " + user.getNickname() + " (ID: " + user.getUserId() + ")");
+            
+            // ⭐️ 1단계: 전체 댓글 확인
+            List<CommentEntity> allComments = commentRepository.findAll();
+            System.out.println("전체 댓글 수: " + allComments.size());
+            
+            // ⭐️ 2단계: 해당 사용자가 작성한 댓글 찾기
+            List<CommentEntity> userComments = new ArrayList<>();
+            for (CommentEntity comment : allComments) {
+                if (comment.getAuthor() != null && 
+                    comment.getAuthor().getUserId().equals(user.getUserId())) {
+                    userComments.add(comment);
+                    System.out.println("- 댓글 ID: " + comment.getId() + 
+                                     ", 게시물 ID: " + (comment.getPost() != null ? comment.getPost().getId() : "null") +
+                                     ", 내용: " + comment.getContent().substring(0, Math.min(10, comment.getContent().length())) + "...");
+                }
+            }
+            System.out.println("사용자가 작성한 댓글 수: " + userComments.size());
+            
+            // ⭐️ 3단계: 댓글이 달린 게시물 추출 (중복 제거)
+            List<PostEntity> repliedPosts = userComments.stream()
+                .map(CommentEntity::getPost)
+                .filter(post -> post != null)
+                .distinct()
+                .sorted((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
+                .collect(Collectors.toList());
+            
+            System.out.println("댓글 단 게시물 수: " + repliedPosts.size());
+            
+            // ⭐️ 4단계: 조회된 게시물 상세 정보
+            for (PostEntity post : repliedPosts) {
+                System.out.println("- 댓글 단 게시물 ID: " + post.getId() + 
+                                 ", 내용: " + (post.getContent() != null ? 
+                                              post.getContent().substring(0, Math.min(20, post.getContent().length())) + "..." : "null"));
+            }
+            
+            return repliedPosts;
+            
         } catch (Exception e) {
-            System.err.println("좋아요 게시물 조회 중 오류: " + e.getMessage());
+            System.err.println("답글 게시물 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
-    // 본인이 사진 첨부한 미디어 목록
+    // ⭐️ 본인이 좋아요를 누른 게시물 목록 (활성화)
+    public List<PostEntity> getMyLikedPosts(String loginId) {
+        try {
+            System.out.println("=== 좋아요 게시물 조회 시작 ===");
+            System.out.println("조회할 loginId: " + loginId);
+            
+            UserEntity user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
+            
+            System.out.println("사용자 찾음: " + user.getNickname());
+            System.out.println("사용자 이메일: " + user.getEmail());
+            
+            // ⭐️ LikeRepository 메서드 사용
+            String userEmail = user.getEmail();
+            List<PostEntity> likedPosts = likeRepository.findPostsByUserEmailOrderByIdDesc(userEmail);
+            System.out.println("좋아요한 게시물 수: " + likedPosts.size());
+            
+            // ⭐️ 조회된 게시물 상세 정보
+            for (PostEntity post : likedPosts) {
+                System.out.println("- 좋아요한 게시물 ID: " + post.getId() + 
+                                 ", 내용: " + (post.getContent() != null ? 
+                                              post.getContent().substring(0, Math.min(20, post.getContent().length())) + "..." : "null"));
+            }
+            
+            return likedPosts;
+            
+        } catch (Exception e) {
+            System.err.println("좋아요 게시물 조회 중 오류: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    // ⭐️ 본인이 사진 첨부한 미디어 목록 (안전한 방법 사용)
     public List<PostEntity> getMyMediaList(String loginId) {
         try {
             UserEntity user = userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + loginId));
             
-            List<PostEntity> media = postRepository.findByAuthorAndImageIsNotNullOrderByCreatedAtDesc(user);
+            // ⭐️ 안전한 방법: 모든 게시물 가져온 후 필터링
+            List<PostEntity> allPosts = postRepository.findByAuthorOrderByCreatedAtDesc(user);
             
+            // 이미지가 있는 게시물만 필터링
+            List<PostEntity> media = allPosts.stream()
+                .filter(post -> post.getImagePath() != null && !post.getImagePath().isEmpty())
+                .collect(Collectors.toList());
+            
+            System.out.println("조회된 미디어 수: " + media.size());
             return media;
+            
         } catch (Exception e) {
             System.err.println("미디어 조회 중 오류: " + e.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    // ⭐️ 기존 게시물에 작성자 정보 추가 (임시 해결책)
+    public void fixExistingPosts() {
+        try {
+            List<PostEntity> allPosts = postRepository.findAll();
+            UserEntity defaultUser = userRepository.findByLoginId("rla840685").orElse(null);
+            
+            if (defaultUser != null) {
+                int fixedCount = 0;
+                for (PostEntity post : allPosts) {
+                    if (post.getAuthor() == null) {
+                        post.setAuthor(defaultUser);
+                        postRepository.save(post);
+                        fixedCount++;
+                        System.out.println("게시물 " + post.getId() + "에 작성자 설정 완료");
+                    }
+                }
+                System.out.println("총 " + fixedCount + "개 게시물 수정 완료");
+            } else {
+                System.err.println("기본 사용자를 찾을 수 없습니다: rla840685");
+            }
+        } catch (Exception e) {
+            System.err.println("게시물 수정 중 오류: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -4,24 +4,175 @@
     <title>게시물 상세</title>
     <link rel="stylesheet" th:href="@{/css/post_detail.css}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #e1e8ed;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .back-btn {
+            color: #1da1f2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .author-info {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        .author-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .author-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .post-date {
+            color: #657786;
+            font-size: 14px;
+        }
+        .post-content {
+            padding: 20px;
+        }
+        .post-image img {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 20px;
+            border-top: 1px solid #e1e8ed;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            background-color: #f7f9fa;
+        }
+        .action-btn.liked {
+            animation: pulse 0.3s ease;
+        }
+        .action-btn.processing {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .comment-form {
+            padding: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        .comment-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .comment-input-wrapper textarea {
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 12px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .submit-btn {
+            align-self: flex-end;
+            background: #1da1f2;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .comments-section {
+            padding: 20px;
+        }
+        .comment-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .comment-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        .comment-author-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .comment-date {
+            color: #657786;
+            font-size: 12px;
+        }
+        .comment-content {
+            margin: 0;
+            padding-left: 40px;
+        }
+        .no-comments {
+            text-align: center;
+            color: #657786;
+            padding: 40px 20px;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
     <!-- 상단 네비게이션 -->
     <div class="header">
-        <a th:href="@{/mypage}" class="back-btn">← 마이페이지로</a>
+        <a href="javascript:history.back()" class="back-btn">← 뒤로가기</a>
         <h1>게시물</h1>
     </div>
 
     <!-- 게시물 상세 내용 -->
     <div class="post-detail">
         <!-- 작성자 정보 -->
-        <div class="author-info" th:if="${post.author != null}">
-            <img th:src="${post.author.profileImg} != null ? @{${post.author.profileImg}} : @{/img/profile_default.jpg}" 
+        <div class="author-info" th:if="${post.authorNickname != null}">
+            <img th:src="${post.authorProfileImg != null ? post.authorProfileImg : '/img/profile_default.jpg'}" 
                  alt="프로필" class="author-avatar">
             <div class="author-details">
-                <span class="author-name" th:text="${post.author.nickname}">작성자</span>
-                <span class="post-date" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">작성일</span>
+                <span class="author-name" th:text="${post.authorNickname}">작성자</span>
+                <span class="post-date" th:text="${post.formattedTime != null ? post.formattedTime : '시간 정보 없음'}">작성일</span>
             </div>
         </div>
 
@@ -33,20 +184,31 @@
             <div th:if="${post.imagePath != null and post.imagePath != ''}" class="post-image">
                 <img th:src="@{${post.imagePath}}" alt="게시물 이미지">
             </div>
+            
+            <!-- 비디오가 있는 경우 표시 -->
+            <div th:if="${post.videoPath != null and post.videoPath != ''}" class="post-video">
+                <video controls style="width: 100%; border-radius: 8px; margin-top: 15px;">
+                    <source th:src="@{${post.videoPath}}" type="video/mp4">
+                    브라우저가 비디오를 지원하지 않습니다.
+                </video>
+            </div>
         </div>
 
         <!-- 좋아요/댓글 버튼 -->
         <div class="action-buttons">
             <button id="likeBtn" class="action-btn like-btn" th:data-post-id="${post.id}">
-                ❤️ <span id="likeCount" th:text="${likeCount}">0</span>
+                ❤️ <span id="likeCount" th:text="${post.likeCount}">0</span>
             </button>
             <button class="action-btn comment-btn" onclick="focusCommentInput()">
-                💬 <span th:text="${comments.size()}">0</span>
+                💬 <span th:text="${post.commentCount}">0</span>
+            </button>
+            <button class="action-btn" onclick="sharePost()">
+                🔗 공유
             </button>
         </div>
 
         <!-- 댓글 작성 폼 -->
-        <div class="comment-form">
+        <div class="comment-form" th:if="${currentUser != null}">
             <form th:action="@{/posts/{postId}/comment(postId=${post.id})}" method="post">
                 <div class="comment-input-wrapper">
                     <textarea name="content" id="commentInput" placeholder="댓글을 입력하세요..." rows="3" required></textarea>
@@ -57,15 +219,14 @@
 
         <!-- 댓글 섹션 -->
         <div class="comments-section">
-            <h3>댓글 <span th:text="${comments.size()}">0</span>개</h3>
+            <h3>댓글 <span th:text="${post.commentCount}">0</span>개</h3>
             
             <!-- 댓글 목록 -->
             <div class="comments-list">
-                <div th:each="comment : ${comments}" class="comment-item">
+                <div th:each="comment : ${post.comments}" class="comment-item">
                     <div class="comment-author">
-                        <img th:src="${comment.author.profileImg} != null ? @{${comment.author.profileImg}} : @{/img/profile_default.jpg}" 
-                             alt="프로필" class="comment-avatar">
-                        <span class="comment-author-name" th:text="${comment.author.nickname}">댓글 작성자</span>
+                        <img src="/img/profile_default.jpg" alt="프로필" class="comment-avatar">
+                        <span class="comment-author-name" th:text="${comment.author}">댓글 작성자</span>
                         <span class="comment-date" th:text="${#temporals.format(comment.createdAt, 'MM-dd HH:mm')}">날짜</span>
                     </div>
                     <p class="comment-content" th:text="${comment.content}">댓글 내용</p>
@@ -73,7 +234,7 @@
             </div>
             
             <!-- 댓글이 없는 경우 -->
-            <div th:if="${#lists.isEmpty(comments)}" class="no-comments">
+            <div th:if="${post.comments == null or #lists.isEmpty(post.comments)}" class="no-comments">
                 아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!
             </div>
         </div>
@@ -81,32 +242,101 @@
 </div>
 
 <script>
-// 좋아요 버튼 클릭 이벤트
-$('#likeBtn').click(function() {
-    const postId = $(this).data('post-id');
+// ⭐️ 이벤트 중복 바인딩 방지
+$(document).ready(function() {
+    console.log('게시물 상세 페이지 로드됨');
     
-    $.ajax({
-        url: '/posts/' + postId + '/like',
-        type: 'POST',
-        success: function(response) {
-            if (response.success) {
-                $('#likeCount').text(response.likeCount);
-                // 좋아요 버튼 애니메이션
-                $('#likeBtn').addClass('liked');
-                setTimeout(() => $('#likeBtn').removeClass('liked'), 300);
-            } else {
-                alert(response.message || '오류가 발생했습니다');
-            }
-        },
-        error: function() {
-            alert('네트워크 오류가 발생했습니다');
+    // 기존 이벤트 제거 후 새로 바인딩
+    $('#likeBtn').off('click.likeEvent').on('click.likeEvent', function() {
+        console.log('좋아요 버튼 클릭됨');
+        
+        const $btn = $(this);
+        const postId = $btn.data('post-id');
+        
+        // 중복 클릭 방지
+        if ($btn.hasClass('processing')) {
+            console.log('이미 처리 중...');
+            return false;
         }
+        
+        $btn.addClass('processing');
+        
+        $.ajax({
+            url: '/posts/' + postId + '/like',
+            type: 'POST',
+            timeout: 5000,
+            success: function(response) {
+                console.log('좋아요 응답:', response);
+                
+                if (response.likeCount !== undefined) {
+                    $('#likeCount').text(response.likeCount);
+                    $btn.addClass('liked');
+                    setTimeout(() => $btn.removeClass('liked'), 300);
+                    console.log(response.message || '좋아요 처리 완료');
+                } else {
+                    alert('오류가 발생했습니다');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('좋아요 오류:', status, error);
+                
+                if (xhr.status === 401) {
+                    alert('로그인이 필요합니다');
+                } else if (xhr.status === 404) {
+                    alert('게시물을 찾을 수 없습니다');
+                } else {
+                    alert('네트워크 오류가 발생했습니다');
+                }
+            },
+            complete: function() {
+                // 처리 완료 후 버튼 활성화
+                $btn.removeClass('processing');
+            }
+        });
+        
+        return false; // 이벤트 전파 방지
     });
 });
 
 // 댓글 입력창 포커스
 function focusCommentInput() {
-    document.getElementById('commentInput').focus();
+    const input = document.getElementById('commentInput');
+    if (input) {
+        input.focus();
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// 공유 기능
+function sharePost() {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href).then(function() {
+            alert('링크가 복사되었습니다!');
+        }).catch(function() {
+            fallbackCopyText(window.location.href);
+        });
+    } else {
+        fallbackCopyText(window.location.href);
+    }
+}
+
+// 구형 브라우저 대응 복사 기능
+function fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        alert('링크가 복사되었습니다!');
+    } catch (err) {
+        alert('복사에 실패했습니다. 수동으로 복사해주세요: ' + text);
+    }
+    
+    document.body.removeChild(textArea);
 }
 </script>
 </body>

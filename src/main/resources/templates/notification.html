@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>알림</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      transition: background 0.2s, color 0.2s;
+    }
+    body {
+      display: flex; flex-direction: row;
+      min-width: 1200px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar {
+      width: 220px; background: #fff;
+      border-right: 1px solid #eee;
+      padding: 24px 0 0 0;
+      box-sizing: border-box;
+      flex-shrink: 0; display: flex;
+      flex-direction: column;
+      min-height: 100vh; height: 100vh;
+      transition: background 0.2s, color 0.2s;
+    }
+    .sidebar .logo {
+      font-weight: bold;
+      margin-left: 24px;
+      margin-bottom: 32px;
+      font-size: 18px;
+    }
+    .sidebar .user {
+      display: flex; align-items: center;
+      margin-bottom: 32px;
+      margin-left: 24px;
+    }
+    .sidebar .user img {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      margin-right: 12px;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 4px 24px;
+    }
+    .sidebar ul li {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .sidebar ul li a {
+      color: inherit;
+      text-decoration: none;
+    }
+    
+    .sidebar ul li:last-child {
+      position: relative;
+      padding-bottom: 4px;
+    }
+    
+    .sidebar ul li:last-child::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: -5px;
+      height: 1px;
+      background: linear-gradient(to right, #e0e0e0 20%, #e0e0e0 80%, transparent);
+    }
+    
+    .sidebar .new-post {
+      display: block;
+      margin-left: 24px;
+      margin-bottom: 20px;
+      padding: 0;
+      background: none;
+      color: #333;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: left;
+    }
+    
+    .toggle-theme {
+      margin-left: 24px;
+      margin-bottom: 20px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #888;
+      padding: 0;
+      transition: all 0.2s ease;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    
+    .toggle-theme:hover {
+      color: #333;
+    }
+    
+    .sidebar .logout {
+      margin-left: 24px;
+      color: #888;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .notification-container { 
+      flex: 1;
+      max-width: 600px; 
+      margin: 20px auto; 
+      background: #fff; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      overflow: hidden; 
+    }
+    .notification-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 16px 20px; 
+      border-bottom: 1px solid #eee; 
+    }
+    .notification-header h1 { 
+      margin: 0; 
+      font-size: 20px; 
+    }
+    .notification-header .mark-all { 
+      font-size: 14px; 
+      color: #4f46e5; 
+      background: none; 
+      border: none; 
+      cursor: pointer; 
+    }
+    .notif-list { 
+      list-style: none; 
+      margin: 0; 
+      padding: 0; 
+    }
+    .notif-item { 
+      display: flex; 
+      align-items: flex-start; 
+      padding: 12px 20px; 
+      position: relative; 
+      cursor: pointer; 
+      transition: background-color 0.2s; 
+    }
+    .notif-item:hover { 
+      background-color: #f8f9fa; 
+    }
+    .notif-item + .notif-item { 
+      border-top: 1px solid #eee; 
+    }
+    .notif-item.unread { 
+      background: #f0f4ff; 
+    }
+    .notif-item.unread:hover { 
+      background: #e6efff; 
+    }
+    .notif-dot { 
+      width: 8px; 
+      height: 8px; 
+      background: #4f46e5; 
+      border-radius: 50%; 
+      position: absolute; 
+      left: 12px; 
+      top: 50%; 
+      transform: translateY(-50%); 
+    }
+    .notif-avatar { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      margin-right: 12px; 
+      flex-shrink: 0; 
+      object-fit: cover; 
+    }
+    .notif-content { 
+      flex: 1; 
+    }
+    .notif-message { 
+      margin: 0 0 4px 0; 
+      font-size: 14px; 
+      color: #333; 
+      line-height: 1.4; 
+    }
+    .notif-time { 
+      margin: 0; 
+      font-size: 12px; 
+      color: #888; 
+    }
+    .empty-message { 
+      text-align: center; 
+      padding: 40px 20px; 
+      color: #888; 
+    }
+    .default-avatar { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: 50%; 
+      background: #e9ecef; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      margin-right: 12px; 
+      flex-shrink: 0; 
+      font-size: 16px; 
+      color: #666; 
+    }
+    .notification-count { 
+      background: #ff4757; 
+      color: white; 
+      border-radius: 50%; 
+      min-width: 20px; 
+      height: 20px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 12px; 
+      font-weight: 600; 
+      padding: 0 6px; 
+    }
+
+    /* 다크모드 스타일 */
+    body.dark,
+    body.dark .notification-container {
+      background: #181a1b !important;
+      color: #e6e6e6 !important;
+    }
+    body.dark .sidebar {
+      background: #1a1c1e;
+      border-right: 1px solid #222;
+    }
+    body.dark .sidebar ul li,
+    body.dark .sidebar .logo,
+    body.dark .sidebar .logout,
+    body.dark .sidebar .new-post {
+      color: #e6e6e6;
+    }
+    
+    body.dark .sidebar ul li:last-child::after {
+      background: linear-gradient(to right, #404040 20%, #404040 80%, transparent);
+    }
+    
+    body.dark .toggle-theme {
+      color: #e6e6e6;
+    }
+    
+    body.dark .toggle-theme:hover {
+      color: #fff;
+    }
+
+    body.dark .notification-header {
+      border-bottom: 1px solid #404040;
+    }
+
+    body.dark .notification-header h1,
+    body.dark .notification-header .mark-all {
+      color: #e6e6e6;
+    }
+
+    body.dark .notif-item {
+      border-top: 1px solid #404040;
+    }
+
+    body.dark .notif-item:hover {
+      background-color: #23272a;
+    }
+
+    body.dark .notif-item.unread {
+      background: #2a2d31;
+    }
+
+    body.dark .notif-item.unread:hover {
+      background: #32363a;
+    }
+
+    body.dark .notif-message {
+      color: #e6e6e6;
+    }
+
+    body.dark .notif-time {
+      color: #aaa;
+    }
+
+    body.dark .empty-message {
+      color: #aaa;
+    }
+
+    body.dark .default-avatar {
+      background: #404040;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">Daily Log</div>
+    <div class="user">
+      <img th:src="${user != null and user.profileImg != null ? user.profileImg : '/default-avatar.png'}" alt="User" />
+      <div>
+        <div th:text="${user != null ? user.nickname : '사용자명'}">사용자명</div>
+      </div>
+    </div>
+    <ul>
+      <li><a th:href="@{/}">홈</a></li>
+      <li><a th:href="@{/posts}">글 목록</a></li>
+      <li><a th:href="@{/notifications}">알림</a></li>
+      <li><a th:href="@{/friends}">친구 목록</a></li>
+      <li><a th:href="@{/chat}">채팅</a></li>
+      <li><a th:href="@{/shorts}">숏폼</a></li>
+      <li><a th:href="@{/subscriptions}">구독 관리</a></li>
+      <li><a th:href="@{/mypage}">내 프로필</a></li>
+      <li><a th:href="@{/setting}">설정</a></li>
+    </ul>
+    <a th:href="@{/posts/new}" class="new-post">새 글 쓰기</a>
+    <div class="logout" onclick="location.href='/logout'">로그아웃</div>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙</button>
+  </div>
+
+  <div class="notification-container">
+    <div class="notification-header">
+      <h1>알림</h1>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span th:if="${unreadCount != null and unreadCount > 0}" class="notification-count" th:text="${unreadCount}">0</span>
+        <button class="mark-all" onclick="markAllRead()">모두 읽음으로 표시</button>
+      </div>
+    </div>
+    
+    <!-- 알림이 없을 때 -->
+    <div th:if="${notifications == null or #lists.isEmpty(notifications)}" class="empty-message">
+      알림이 없습니다.
+    </div>
+    
+    <!-- 알림 목록 -->
+    <ul th:if="${notifications != null and !#lists.isEmpty(notifications)}" class="notif-list">
+      <li th:each="n : ${notifications}"
+          th:class="'notif-item' + (${!n.isRead} ? ' unread' : '')"
+          th:attr="data-id=${n.id}, data-url=${n.url ?: '/'}"
+          onclick="goAndMarkRead(this)">
+        <span th:if="${!n.isRead}" class="notif-dot"></span>
+        
+        <!-- 프로필 사진 또는 기본 아바타 -->
+        <div th:if="${n.sender != null and n.sender.profileImg != null and !n.sender.profileImg.isEmpty()}">
+          <img th:src="@{${n.sender.profileImg}}" 
+               th:alt="${n.sender.nickname + '의 프로필'}"
+               class="notif-avatar"
+               onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'default-avatar\'><span>' + this.alt.charAt(0).toUpperCase() + '</span></div>';" />
+        </div>
+        <div th:if="${n.sender == null or n.sender.profileImg == null or n.sender.profileImg.isEmpty()}" 
+             class="default-avatar">
+          <span th:text="${n.sender != null ? n.sender.nickname.substring(0,1).toUpperCase() : '🔔'}">🔔</span>
+        </div>
+        
+        <div class="notif-content">
+          <p class="notif-message" th:text="${n.message}">알림 메시지</p>
+          <p class="notif-time" th:text="${n.createdAt != null ? #temporals.format(n.createdAt, 'MM/dd HH:mm') : ''}">시간</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+  
+  <script th:inline="javascript">
+    const currentUserId = /*[[${currentUserId}]]*/ 1;
+    
+    function goAndMarkRead(el) {
+      const id = el.getAttribute('data-id');
+      const url = el.getAttribute('data-url') || '/';
+      
+      if (id) {
+        fetch('/notifications/' + id + '/read', { 
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => {
+          if (response.ok) {
+            el.classList.remove('unread');
+            const dot = el.querySelector('.notif-dot');
+            if (dot) {
+              dot.remove();
+            }
+            updateNotificationCount();
+            
+            if (url !== '/') {
+              setTimeout(() => {
+                window.location.href = url;
+              }, 100);
+            }
+          } else {
+            console.error('Failed to mark notification as read');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      }
+    }
+    
+    function markAllRead() {
+      const unreadItems = document.querySelectorAll('.notif-item.unread');
+      
+      if (unreadItems.length === 0) {
+        alert('읽지 않은 알림이 없습니다.');
+        return;
+      }
+      
+      const promises = [];
+      
+      unreadItems.forEach(el => {
+        const id = el.getAttribute('data-id');
+        if (id) {
+          const promise = fetch('/notifications/' + id + '/read', { 
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            if (response.ok) {
+              el.classList.remove('unread');
+              const dot = el.querySelector('.notif-dot');
+              if (dot) {
+                dot.remove();
+              }
+            }
+            return response.ok;
+          });
+          promises.push(promise);
+        }
+      });
+      
+      Promise.all(promises).then(results => {
+        const successCount = results.filter(r => r).length;
+        if (successCount > 0) {
+          updateNotificationCount();
+        }
+      }).catch(error => {
+        console.error('Error marking all as read:', error);
+      });
+    }
+    
+    function updateNotificationCount() {
+      const countElement = document.querySelector('.notification-count');
+      const unreadItems = document.querySelectorAll('.notif-item.unread');
+      
+      if (countElement) {
+        if (unreadItems.length === 0) {
+          countElement.style.display = 'none';
+        } else {
+          countElement.textContent = unreadItems.length;
+          countElement.style.display = 'flex';
+        }
+      }
+    }
+    
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', theme);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      updateNotificationCount();
+      
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+      }
+    });
+  </script>
+</body>
+</html>

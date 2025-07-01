@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title layout:fragment="title">서담 SNS</title>
+  <style>
+    :root {
+      --bg-color: #f5f6fa;
+      --text-color: #000;
+      --main-bg: #fff;
+    }
+    body.dark {
+      --bg-color: #2d3436;
+      --text-color: #dfe6e9;
+      --main-bg: #353b48;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Noto Sans KR', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2d3436;
+      color: #fff;
+      padding: 20px 40px;
+      font-size: 1.8em;
+      font-weight: bold;
+    }
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: 0.9em;
+      color: #888;
+      background: var(--bg-color);
+      margin-top: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>서담 SNS</header>
+
+  <main layout:fragment="content">
+    <!-- 개별 페이지에서 내용 삽입 -->
+  </main>
+
+  <footer>
+    © 2025 서담. All rights reserved.
+  </footer>
+
+  <script>
+    function applyTheme() {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'dark') {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+    }
+    function toggleTheme() {
+      document.body.classList.toggle('dark');
+      const current = document.body.classList.contains('dark') ? 'dark' : 'light';
+      localStorage.setItem('theme', current);
+    }
+    document.addEventListener('DOMContentLoaded', applyTheme);
+  </script>
+</body>
+</html>

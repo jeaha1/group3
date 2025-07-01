@@ -74,7 +74,9 @@
                     <span th:if="${post.createdAt != null}" th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd')}">2025/06/30</span>
                 </a>
             </div>
-            <div th:if="${posts == null or #lists.isEmpty(posts)}">작성한 게시물이 없습니다.</div>
+            <div th:if="${posts == null or #lists.isEmpty(posts)}">
+                <p>작성한 게시물이 없습니다.</p>
+            </div>
         </div>
         
         <!-- 답글 탭 -->

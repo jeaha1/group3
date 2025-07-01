@@ -1,0 +1,71 @@
+<!-- templates/setting/change-phone.html -->
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>전화번호 변경</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+        label, input {
+            display: block;
+            width: 100%;
+            margin-bottom: 16px;
+            font-size: 1em;
+        }
+        input {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #166fe5;
+        }
+        .error {
+            color: red;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>전화번호 변경</h1>
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+    <form th:action="@{/setting/change-phoneProc}" method="post">
+        <label>현재 전화번호</label>
+        <input type="text" th:value="${currentPhone}" disabled>
+        
+        <label for="newPhone">새 전화번호</label>
+        <input type="text" name="newPhone" id="newPhone" placeholder="010-1234-5678" required>
+
+        <button type="submit" class="button">전화번호 변경</button>
+    </form>
+</div>
+</body>
+</html>
